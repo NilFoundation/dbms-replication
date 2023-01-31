@@ -22,8 +22,8 @@ list(APPEND CMAKE_MODULE_PATH
 include(CMConfig)
 include(CMSetupVersion)
 
-if(NOT CMAKE_WORKSPACE_NAME OR NOT ("${CMAKE_WORKSPACE_NAME}" STREQUAL "replication"))
-    cm_workspace(replication)
+if(NOT CMAKE_WORKSPACE_NAME OR NOT ("${CMAKE_WORKSPACE_NAME}" STREQUAL "dbms"))
+    cm_workspace(dbms)
 endif()
 
 macro(cm_find_package NAME)
@@ -36,7 +36,7 @@ macro(cm_find_package NAME)
     endforeach()
 endmacro()
 
-cm_project(math WORKSPACE_NAME ${CMAKE_WORKSPACE_NAME} LANGUAGES ASM C CXX)
+cm_project(replication WORKSPACE_NAME ${CMAKE_WORKSPACE_NAME} LANGUAGES ASM C CXX)
 
 cm_find_package(CM)
 include(CMDeploy)
@@ -66,9 +66,9 @@ target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTER
                            ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
-#                      dbms::cluster
-#                      dbms::velocypack
-#                      dbms::agency
+#                      ${CMAKE_WORKSPACE_NAME::cluster
+#                      ${CMAKE_WORKSPACE_NAME::velocypack
+#                      ${CMAKE_WORKSPACE_NAME::agency
                       ${Boost_LIBRARIES})
 
 cm_deploy(TARGETS ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
