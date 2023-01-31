@@ -29,10 +29,10 @@ namespace nil::dbms::replication::algorithms {
         virtual ~StateActionContext() = default;
 
         virtual auto getReplicatedStateById(log_id) noexcept
-            -> std::shared_ptr<state::ReplicatedStateBase> = 0;
+            -> std::shared_ptr<state::replicated_state_base> = 0;
 
         virtual auto create_replicated_state(log_id, std::string_view, velocypack::Slice)
-            -> ResultT<std::shared_ptr<state::ReplicatedStateBase>> = 0;
+            -> ResultT<std::shared_ptr<state::replicated_state_base>> = 0;
 
         virtual auto dropReplicatedState(log_id) -> Result = 0;
     };

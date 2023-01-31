@@ -30,7 +30,7 @@ namespace nil::dbms::replication::state {
         // 3. make leader state available
 
         LOG_CTX("53ba0", TRACE, loggerContext) << "LeaderStateManager waiting for leadership to be established";
-        guarded_data.getLockedGuard()->updateInternalState(LeaderInternalState::kWaitingForLeadershipEstablished);
+        guarded_data.getLockedGuard()->updateInternalState(leader_internal_state::kWaitingForLeadershipEstablished);
         log_leader->wait_for_leadership()
             .thenValue([weak = this->weak_from_this()](auto &&result) {
                 auto self = weak.lock();
@@ -39,8 +39,8 @@ namespace nil::dbms::replication::state {
                 }
                 LOG_CTX("53ba1", TRACE, self->loggerContext) << "LeaderStateManager established";
                 auto f = self->guarded_data.doUnderLock([&](guarded_data &data) {
-                    TRI_ASSERT(data.internalState == LeaderInternalState::kWaitingForLeadershipEstablished);
-                    data.updateInternalState(LeaderInternalState::kIngestingExistingLog);
+                    TRI_ASSERT(data.internalState == leader_internal_state::kWaitingForLeadershipEstablished);
+                    data.updateInternalState(leader_internal_state::kIngestingExistingLog);
                     auto mux = Multiplexer::construct(self->log_leader);
                     mux->digestAvailableEntries();
                     data.stream = mux->template getStreamById<1>();    // TODO fix stream id
@@ -58,7 +58,7 @@ namespace nil::dbms::replication::state {
                     }
                     LOG_CTX("53ba0", TRACE, self->loggerContext) << "creating leader instance";
                     auto core = self->guarded_data.doUnderLock([&](guarded_data &data) {
-                        data.updateInternalState(LeaderInternalState::kRecoveryInProgress, result->range());
+                        data.updateInternalState(leader_internal_state::kRecoveryInProgress, result->range());
                         return std::move(data.core);
                     });
                     if (core == nullptr) {
@@ -85,7 +85,7 @@ namespace nil::dbms::replication::state {
                                             }
                                             data.state = machine;
                                             data.token->snapshot.updateStatus(SnapshotStatus::kCompleted);
-                                            data.updateInternalState(LeaderInternalState::kServiceAvailable);
+                                            data.updateInternalState(leader_internal_state::kServiceAvailable);
                                             data.state->_stream = data.stream;
                                             return data.state;
                                         });
@@ -153,7 +153,7 @@ namespace nil::dbms::replication::state {
                                               std::unique_ptr<CoreType> core,
                                               std::unique_ptr<ReplicatedStateToken> token,
                                               std::shared_ptr<Factory> factory) noexcept :
-        guarded_data(*this, LeaderInternalState::kWaitingForLeadershipEstablished, std::move(core), std::move(token)),
+        guarded_data(*this, leader_internal_state::kWaitingForLeadershipEstablished, std::move(core), std::move(token)),
         parent(parent), log_leader(std::move(leader)), loggerContext(std::move(loggerContext)),
         factory(std::move(factory)) {
     }
@@ -175,7 +175,7 @@ namespace nil::dbms::replication::state {
         LeaderStatus status;
         status.managerState.state = guard->internalState;
         status.managerState.lastChange = guard->lastInternalStateChange;
-        if (guard->internalState == LeaderInternalState::kRecoveryInProgress && guard->recoveryRange) {
+        if (guard->internalState == leader_internal_state::kRecoveryInProgress && guard->recoveryRange) {
             status.managerState.detail = "recovery range is " + to_string(*guard->recoveryRange);
         } else {
             status.managerState.detail = std::nullopt;

@@ -23,7 +23,7 @@
 using namespace nil::dbms::replication::state::document;
 
 void DocumentStateMachineFeature::start() {
-    auto &feature = server().getFeature<ReplicatedStateAppFeature>();
+    auto &feature = server().getFeature<replicated_state_app_feature>();
     feature.registerStateType<DocumentState>("document");
 }
 

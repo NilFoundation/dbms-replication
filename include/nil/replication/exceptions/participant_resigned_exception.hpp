@@ -19,9 +19,15 @@
 
 #include "basics/exceptions.h"
 
-namespace nil::dbms::replication::log {
-    class participant_resigned_exception : public ::nil::dbms::basics::Exception {
-    public:
-        using Exception::Exception;
-    };
+namespace nil {
+    namespace dbms {
+        namespace replication {
+            namespace log {
+                class participant_resigned_exception : public nil::dbms::basics::Exception {
+                public:
+                    using Exception::Exception;
+                };
+            }
+        }
+    }
 }    // namespace nil::dbms::replication::log

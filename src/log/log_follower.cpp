@@ -161,7 +161,7 @@ auto log::LogFollower::appendEntries(AppendEntriesRequest req)
         // state with the new value.
 
         if (dataGuard->_inMemoryLog.getLastIndex() != req.prevLogEntry.index) {
-            auto newInMemoryLog = dataGuard->_inMemoryLog.takeSnapshotUpToAndIncluding(req.prevLogEntry.index);
+            auto newin_memory_log = dataGuard->_inMemoryLog.takeSnapshotUpToAndIncluding(req.prevLogEntry.index);
             auto res = dataGuard->_log_core->remove_back(req.prevLogEntry.index + 1);
             if (!res.ok()) {
                 LOG_CTX("f17b8", ERR, _loggerContext)
@@ -170,8 +170,8 @@ auto log::LogFollower::appendEntries(AppendEntriesRequest req)
             }
 
             // commit the deletion in memory
-            static_assert(std::is_nothrow_move_assignable_v<decltype(newInMemoryLog)>);
-            dataGuard->_inMemoryLog = std::move(newInMemoryLog);
+            static_assert(std::is_nothrow_move_assignable_v<decltype(newin_memory_log)>);
+            dataGuard->_inMemoryLog = std::move(newin_memory_log);
         }
     }
 
@@ -189,7 +189,7 @@ auto log::LogFollower::appendEntries(AppendEntriesRequest req)
     }
 
     // Allocations
-    auto newInMemoryLog = std::invoke([&] {
+    auto newin_memory_log = std::invoke([&] {
         // if prevlog_index is 0, we want to replace the entire log
         // Note that req.entries might not start at 1, because the log could be
         // compacted already.
@@ -197,18 +197,18 @@ auto log::LogFollower::appendEntries(AppendEntriesRequest req)
             TRI_ASSERT(!req.entries.empty());
             LOG_CTX("14696", DEBUG, _loggerContext)
                 << "replacing my log. New logs starts at " << req.entries.front().entry().log_term_index_pair() << ".";
-            return InMemoryLog {req.entries};
+            return in_memory_log {req.entries};
         }
         return dataGuard->_inMemoryLog.append(_loggerContext, req.entries);
     });
     auto iter = std::make_unique<InMemorypersisted_logIterator>(req.entries);
 
     auto *core = dataGuard->_log_core.get();
-    static_assert(std::is_nothrow_move_constructible_v<decltype(newInMemoryLog)>);
+    static_assert(std::is_nothrow_move_constructible_v<decltype(newin_memory_log)>);
 
     auto checkResultAndCommitIndex =
         [self = shared_from_this(), inFlightGuard = std::move(inFlightScopeGuard), req = std::move(req),
-         newInMemoryLog = std::move(newInMemoryLog), toBeResolved = std::move(toBeResolved)](
+         newin_memory_log = std::move(newin_memory_log), toBeResolved = std::move(toBeResolved)](
             futures::Try<Result> &&tryRes) mutable -> std::pair<AppendEntriesResult, deferred_action> {
         // We have to release the guard after this lambda is finished.
         // Otherwise it would be released when the lambda is destroyed, which
@@ -232,8 +232,8 @@ auto log::LogFollower::appendEntries(AppendEntriesRequest req)
             }
 
             // commit the write in memory
-            static_assert(std::is_nothrow_move_assignable_v<decltype(newInMemoryLog)>);
-            data->_inMemoryLog = std::move(newInMemoryLog);
+            static_assert(std::is_nothrow_move_assignable_v<decltype(newin_memory_log)>);
+            data->_inMemoryLog = std::move(newin_memory_log);
 
             LOG_CTX("dd72d", TRACE, data->_follower._loggerContext)
                 << "appended " << req.entries.size() << " log entries after " << req.prevLogEntry.index
@@ -332,7 +332,7 @@ auto log::LogFollower::GuardedFollowerData::didResign() const noexcept -> bool {
 log::LogFollower::GuardedFollowerData::GuardedFollowerData(LogFollower const &self,
                                                                       std::unique_ptr<log_core>
                                                                           log_core,
-                                                                      InMemoryLog inMemoryLog) :
+                                                                      in_memory_log inMemoryLog) :
     _follower(self),
     _inMemoryLog(std::move(inMemoryLog)), _log_core(std::move(log_core)) {
 }
@@ -409,7 +409,7 @@ log::LogFollower::LogFollower(logger_context const &logContext,
                                          std::shared_ptr<ReplicatedLogMetrics> logMetrics, ParticipantId id,
                                          std::unique_ptr<log_core> log_core, log_term term,
                                          std::optional<ParticipantId> leaderId,
-                                         log::InMemoryLog inMemoryLog) :
+                                         log::in_memory_log inMemoryLog) :
     _logMetrics(std::move(logMetrics)),
     _loggerContext(logContext.with<logContextKeyLogComponent>("follower")
                        .with<logContextKeyLeaderId>(leaderId.value_or("<none>"))
@@ -557,7 +557,7 @@ auto LogFollower::waitForResign() -> futures::Future<futures::Unit> {
 auto LogFollower::construct(logger_context const &loggerContext, std::shared_ptr<ReplicatedLogMetrics> logMetrics,
                             ParticipantId id, std::unique_ptr<log_core> log_core, log_term term,
                             std::optional<ParticipantId> leaderId) -> std::shared_ptr<LogFollower> {
-    auto log = InMemoryLog::loadFromlog_core(*log_core);
+    auto log = in_memory_log::loadFromlog_core(*log_core);
 
     auto const lastIndex = log.getLastterm_index_pair();
 
@@ -569,7 +569,7 @@ auto LogFollower::construct(logger_context const &loggerContext, std::shared_ptr
     struct MakeSharedWrapper : LogFollower {
         MakeSharedWrapper(logger_context const &loggerContext, std::shared_ptr<ReplicatedLogMetrics> logMetrics,
                           ParticipantId id, std::unique_ptr<log_core> log_core, log_term term,
-                          std::optional<ParticipantId> leaderId, InMemoryLog inMemoryLog) :
+                          std::optional<ParticipantId> leaderId, in_memory_log inMemoryLog) :
             LogFollower(loggerContext, std::move(logMetrics), std::move(id), std::move(log_core), term,
                         std::move(leaderId), std::move(inMemoryLog)) {
         }
@@ -578,7 +578,7 @@ auto LogFollower::construct(logger_context const &loggerContext, std::shared_ptr
     return std::make_shared<MakeSharedWrapper>(loggerContext, std::move(logMetrics), std::move(id), std::move(log_core),
                                                term, std::move(leaderId), std::move(log));
 }
-auto LogFollower::copyInMemoryLog() const -> InMemoryLog {
+auto LogFollower::copyin_memory_log() const -> in_memory_log {
     return _guardedFollowerData.getLockedGuard()->_inMemoryLog;
 }
 

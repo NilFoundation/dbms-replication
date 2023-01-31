@@ -63,7 +63,7 @@ namespace nil::dbms::replication::streams {
     auto StreamInformationBlock<stream_descriptor<Id, Type, Tags>>::getIterator() -> std::unique_ptr<Iterator> {
         auto log = getPersistentContainer();
 
-        struct Iterator : Typedlog_rangeIterator<StreamEntryView<Type>> {
+        struct Iterator : typed_log_range_iterator<StreamEntryView<Type>> {
             ContainerType log;
             typename ContainerType::iterator current;
 
@@ -96,7 +96,7 @@ namespace nil::dbms::replication::streams {
 
         using ContainerIterator = typename ContainerType::iterator;
 
-        struct Iterator : Typedlog_rangeIterator<StreamEntryView<Type>> {
+        struct Iterator : typed_log_range_iterator<StreamEntryView<Type>> {
             ContainerType _log;
             ContainerIterator _current;
             log_index _start, _stop;

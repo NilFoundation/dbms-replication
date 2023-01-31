@@ -63,7 +63,7 @@ namespace nil::dbms::replication::log {
         [[nodiscard]] auto getCommittedLogIterator(log_index firstIndex) const -> std::unique_ptr<LogIterator>;
         [[nodiscard]] auto getCommitIndex() const noexcept -> log_index override;
 
-        [[nodiscard]] auto copyInMemoryLog() const -> InMemoryLog override;
+        [[nodiscard]] auto copyin_memory_log() const -> in_memory_log override;
         [[nodiscard]] auto release(log_index doneWithIdx) -> Result override;
 
         /// @brief Resolved when the leader has committed at least one entry.
@@ -72,11 +72,11 @@ namespace nil::dbms::replication::log {
     private:
         LogFollower(logger_context const &, std::shared_ptr<ReplicatedLogMetrics> logMetrics, ParticipantId id,
                     std::unique_ptr<log_core> log_core, log_term term, std::optional<ParticipantId> leaderId,
-                    InMemoryLog inMemoryLog);
+                    in_memory_log inMemoryLog);
 
         struct GuardedFollowerData {
             GuardedFollowerData() = delete;
-            GuardedFollowerData(LogFollower const &self, std::unique_ptr<log_core> log_core, InMemoryLog inMemoryLog);
+            GuardedFollowerData(LogFollower const &self, std::unique_ptr<log_core> log_core, in_memory_log inMemoryLog);
 
             [[nodiscard]] auto get_local_statistics() const noexcept -> LogStatistics;
             [[nodiscard]] auto getCommittedLogIterator(log_index firstIndex) const -> std::unique_ptr<log_rangeIterator>;
@@ -88,7 +88,7 @@ namespace nil::dbms::replication::log {
             [[nodiscard]] auto waitForResign() -> std::pair<futures::Future<futures::Unit>, deferred_action>;
 
             LogFollower const &_follower;
-            InMemoryLog _inMemoryLog;
+            in_memory_log _inMemoryLog;
             std::unique_ptr<log_core> _log_core;
             log_index _commitIndex {0};
             log_index _lowestIndexToKeep;

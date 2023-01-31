@@ -41,7 +41,7 @@ namespace nil::dbms::replication::log {
 
     class log_iterator : public log_rangeIterator {
     public:
-        using log_type = ::immer::flex_vector<InMemoryLogEntry, nil::dbms::immer::dbms_memory_policy>;
+        using log_type = ::immer::flex_vector<in_memory_logEntry, nil::dbms::immer::dbms_memory_policy>;
 
         explicit log_iterator(log_type container) :
             _container(std::move(container)), _begin(_container.begin()), _end(_container.end()) {
@@ -75,13 +75,13 @@ namespace nil::dbms::replication::log {
 
     class InMemorypersisted_logIterator : public persisted_logIterator {
     public:
-        using log_type = ::immer::flex_vector<InMemoryLogEntry, nil::dbms::immer::dbms_memory_policy>;
+        using log_type = ::immer::flex_vector<in_memory_logEntry, nil::dbms::immer::dbms_memory_policy>;
 
         explicit InMemorypersisted_logIterator(log_type container) :
             _container(std::move(container)), _begin(_container.begin()), _end(_container.end()) {
         }
 
-        auto next() -> std::optional<PersistingLogEntry> override {
+        auto next() -> std::optional<persisting_log_entry> override {
             if (_begin != _end) {
                 auto const &it = *_begin;
                 ++_begin;
@@ -96,15 +96,15 @@ namespace nil::dbms::replication::log {
         log_type::const_iterator _end;
     };
 
-    class InMemoryLogIterator : public TypedLogIterator<InMemoryLogEntry> {
+    class in_memory_logIterator : public TypedLogIterator<in_memory_logEntry> {
     public:
-        using log_type = ::immer::flex_vector<InMemoryLogEntry, nil::dbms::immer::dbms_memory_policy>;
+        using log_type = ::immer::flex_vector<in_memory_logEntry, nil::dbms::immer::dbms_memory_policy>;
 
-        explicit InMemoryLogIterator(log_type container) :
+        explicit in_memory_logIterator(log_type container) :
             _container(std::move(container)), _begin(_container.begin()), _end(_container.end()) {
         }
 
-        auto next() -> std::optional<InMemoryLogEntry> override {
+        auto next() -> std::optional<in_memory_logEntry> override {
             if (_begin != _end) {
                 auto const &it = *_begin;
                 ++_begin;

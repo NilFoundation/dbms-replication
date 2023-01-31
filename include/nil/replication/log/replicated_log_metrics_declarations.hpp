@@ -26,7 +26,7 @@
 
 namespace nil::dbms {
 
-    struct AppendEntriesRttScale {
+    struct append_entries_rtt_scale {
         using scale_t = metrics::LogScale<std::uint64_t>;
         static scale_t scale() {
             // values in us, smallest bucket is up to 1ms, scales up to 2^16ms =~ 65s.
@@ -45,9 +45,9 @@ namespace nil::dbms {
     DECLARE_GAUGE(dbms_replication_log_number, std::uint64_t,
                   "Number of replicated logs on this dbmsd instance");
 
-    DECLARE_HISTOGRAM(dbms_replication_log_append_entries_rtt, AppendEntriesRttScale,
+    DECLARE_HISTOGRAM(dbms_replication_log_append_entries_rtt, append_entries_rtt_scale,
                       "RTT for AppendEntries requests [us]");
-    DECLARE_HISTOGRAM(dbms_replication_log_follower_append_entries_rt, AppendEntriesRttScale,
+    DECLARE_HISTOGRAM(dbms_replication_log_follower_append_entries_rt, append_entries_rtt_scale,
                       "RT for AppendEntries call [us]");
 
     DECLARE_COUNTER(dbms_replication_log_creation_total,
@@ -82,7 +82,7 @@ namespace nil::dbms {
                       "Number of bytes per insert in replicated log leader "
                       "instances on this server [bytes]");
 
-    DECLARE_HISTOGRAM(dbms_replication_log_inserts_rtt, AppendEntriesRttScale,
+    DECLARE_HISTOGRAM(dbms_replication_log_inserts_rtt, append_entries_rtt_scale,
                       "Histogram of round-trip times of replicated log inserts [us]");
 
 }    // namespace nil::dbms

@@ -47,7 +47,7 @@ namespace nil::dbms::replication {
 
     auto operator==(log_payload const &, log_payload const &) -> bool;
 
-    struct LogMetaPayload {
+    struct log_meta_payload {
         struct FirstEntryOfTerm {
             ParticipantId leader;
             agency::participants_config participants;
@@ -63,43 +63,43 @@ namespace nil::dbms::replication {
             }
         };
 
-        static auto withFirstEntryOfTerm(ParticipantId leader, agency::participants_config config) -> LogMetaPayload;
+        static auto with_first_entry_of_term(ParticipantId leader, agency::participants_config config) -> log_meta_payload;
 
-        struct Updateparticipants_config {
+        struct update_participants_config {
             agency::participants_config participants;
 
-            static auto from_velocy_pack(velocypack::Slice) -> Updateparticipants_config;
+            static auto from_velocy_pack(velocypack::Slice) -> update_participants_config;
             void to_velocy_pack(velocypack::Builder &) const;
 
-            bool operator==(const Updateparticipants_config &rhs) const {
+            bool operator==(const update_participants_config &rhs) const {
                 return participants == rhs.participants;
             }
-            bool operator!=(const Updateparticipants_config &rhs) const {
+            bool operator!=(const update_participants_config &rhs) const {
                 return !(rhs == *this);
             }
         };
 
-        static auto withUpdateparticipants_config(agency::participants_config config) -> LogMetaPayload;
+        static auto with_update_participants_config(agency::participants_config config) -> log_meta_payload;
 
-        static auto from_velocy_pack(velocypack::Slice) -> LogMetaPayload;
+        static auto from_velocy_pack(velocypack::Slice) -> log_meta_payload;
         void to_velocy_pack(velocypack::Builder &) const;
 
-        std::variant<FirstEntryOfTerm, Updateparticipants_config> info;
-        bool operator==(const LogMetaPayload &rhs) const {
+        std::variant<FirstEntryOfTerm, update_participants_config> info;
+        bool operator==(const log_meta_payload &rhs) const {
             return info == rhs.info;
         }
-        bool operator!=(const LogMetaPayload &rhs) const {
+        bool operator!=(const log_meta_payload &rhs) const {
             return !(rhs == *this);
         }
     };
 
-    class PersistingLogEntry {
+    class persisting_log_entry {
     public:
-        PersistingLogEntry(log_term term, log_index index, log_payload payload) :
-            PersistingLogEntry(term_index_pair {term, index}, std::move(payload)) {
+        persisting_log_entry(log_term term, log_index index, log_payload payload) :
+            persisting_log_entry(term_index_pair {term, index}, std::move(payload)) {
         }
-        PersistingLogEntry(term_index_pair, std::variant<LogMetaPayload, log_payload>);
-        PersistingLogEntry(log_index, velocypack::Slice persisted);    // RocksDB from disk constructor
+        persisting_log_entry(term_index_pair, std::variant<log_meta_payload, log_payload>);
+        persisting_log_entry(log_index, velocypack::Slice persisted);    // RocksDB from disk constructor
 
         [[nodiscard]] auto log_term() const noexcept -> log_term;
         [[nodiscard]] auto log_index() const noexcept -> log_index;
@@ -108,45 +108,45 @@ namespace nil::dbms::replication {
         [[nodiscard]] auto approxbyte_size() const noexcept -> std::size_t;
         [[nodiscard]] auto hasPayload() const noexcept -> bool;
         [[nodiscard]] auto hasMeta() const noexcept -> bool;
-        [[nodiscard]] auto meta() const noexcept -> LogMetaPayload const *;
+        [[nodiscard]] auto meta() const noexcept -> log_meta_payload const *;
 
         class Omitlog_index { };
         constexpr static auto omitlog_index = Omitlog_index();
         void to_velocy_pack(velocypack::Builder &builder) const;
         void to_velocy_pack(velocypack::Builder &builder, Omitlog_index) const;
-        static auto from_velocy_pack(velocypack::Slice slice) -> PersistingLogEntry;
+        static auto from_velocy_pack(velocypack::Slice slice) -> persisting_log_entry;
 
-        bool operator==(const PersistingLogEntry &rhs) const {
+        bool operator==(const persisting_log_entry &rhs) const {
             return _termIndex == rhs._termIndex && _payload == rhs._payload;
         }
-        bool operator!=(const PersistingLogEntry &rhs) const {
+        bool operator!=(const persisting_log_entry &rhs) const {
             return !(rhs == *this);
         }
 
     private:
-        void entriesWithoutIndexto_velocy_pack(velocypack::Builder &builder) const;
+        void entries_without_index_to_velocy_pack(velocypack::Builder &builder) const;
 
         term_index_pair _termIndex;
         // TODO It seems impractical to not copy persisting log entries, so we should
         //      probably make this a shared_ptr (or immer::box).
-        std::variant<LogMetaPayload, log_payload> _payload;
+        std::variant<log_meta_payload, log_payload> _payload;
 
         // TODO this is a magic constant "measuring" the size of
-        //      of the non-payload data in a PersistingLogEntry
+        //      of the non-payload data in a persisting_log_entry
         static inline constexpr auto approxMetaDataSize = std::size_t {42 * 2};
     };
 
     // A log entry, enriched with non-persisted metadata, to be stored in an
-    // InMemoryLog.
-    class InMemoryLogEntry {
+    // in_memory_log.
+    class in_memory_logEntry {
     public:
         using clock = std::chrono::steady_clock;
 
-        explicit InMemoryLogEntry(PersistingLogEntry entry, bool waitForSync = false);
+        explicit in_memory_logEntry(persisting_log_entry entry, bool waitForSync = false);
 
         [[nodiscard]] auto insertTp() const noexcept -> clock::time_point;
         void setInsertTp(clock::time_point) noexcept;
-        [[nodiscard]] auto entry() const noexcept -> PersistingLogEntry const &;
+        [[nodiscard]] auto entry() const noexcept -> persisting_log_entry const &;
         [[nodiscard]] bool getWaitForSync() const noexcept {
             return _waitForSync;
         }
@@ -154,7 +154,7 @@ namespace nil::dbms::replication {
     private:
         bool _waitForSync;
         // Immutable box that allows sharing, i.e. cheap copying.
-        ::immer::box<PersistingLogEntry, ::nil::dbms::immer::dbms_memory_policy> _logEntry;
+        ::immer::box<persisting_log_entry, ::nil::dbms::immer::dbms_memory_policy> _logEntry;
         // Timepoint at which the insert was started (not the point in time where it
         // was committed)
         clock::time_point _insertTp {};
@@ -194,7 +194,7 @@ namespace nil::dbms::replication {
     };
 
     template<typename T>
-    struct Typedlog_rangeIterator : TypedLogIterator<T> {
+    struct typed_log_range_iterator : TypedLogIterator<T> {
         // returns the index interval [from, to)
         // Note that this does not imply that all indexes in the range [from, to)
         // are returned. Hence (to - from) is only an upper bound on the number of
@@ -203,8 +203,8 @@ namespace nil::dbms::replication {
     };
 
     using LogIterator = TypedLogIterator<LogEntryView>;
-    using log_rangeIterator = Typedlog_rangeIterator<LogEntryView>;
+    using log_rangeIterator = typed_log_range_iterator<LogEntryView>;
 
     // ReplicatedLog-internal iterator over PersistingLogEntries
-    struct persisted_logIterator : TypedLogIterator<PersistingLogEntry> { };
+    struct persisted_logIterator : TypedLogIterator<persisting_log_entry> { };
 }    // namespace nil::dbms::replication

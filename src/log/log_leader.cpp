@@ -89,7 +89,7 @@ using namespace nil::dbms::replication;
 log::log_leader::log_leader(logger_context logContext, std::shared_ptr<ReplicatedLogMetrics> logMetrics,
                                      std::shared_ptr<ReplicatedLogGlobalSettings const> options,
                                      agency::log_plan_config config, ParticipantId id, log_term term, log_index firstIndex,
-                                     InMemoryLog inMemoryLog,
+                                     in_memory_log inMemoryLog,
                                      std::shared_ptr<cluster::IFailureOracle const> failureOracle) :
     _logContext(std::move(logContext)),
     _logMetrics(std::move(logMetrics)), _options(std::move(options)), _failureOracle(std::move(failureOracle)),
@@ -139,7 +139,7 @@ namespace {
 
 void log::log_leader::handleResolvedPromiseSet(ResolvedPromiseSet resolvedPromises,
                                                          std::shared_ptr<ReplicatedLogMetrics> const &logMetrics) {
-    auto const commitTp = InMemoryLogEntry::clock::now();
+    auto const commitTp = in_memory_logEntry::clock::now();
     for (auto const &it : resolvedPromises._commitedLogEntries) {
         using namespace std::chrono_literals;
         auto const entryDuration = commitTp - it.insertTp();
@@ -269,14 +269,14 @@ auto log::log_leader::construct(agency::log_plan_config config, std::unique_ptr<
     public:
         MakeSharedlog_leader(logger_context logContext, std::shared_ptr<ReplicatedLogMetrics> logMetrics,
                             std::shared_ptr<ReplicatedLogGlobalSettings const> options, agency::log_plan_config config,
-                            ParticipantId id, log_term term, log_index firstIndexOfCurrentTerm, InMemoryLog inMemoryLog,
+                            ParticipantId id, log_term term, log_index firstIndexOfCurrentTerm, in_memory_log inMemoryLog,
                             std::shared_ptr<cluster::IFailureOracle const> failureOracle) :
             log_leader(std::move(logContext), std::move(logMetrics), std::move(options), config, std::move(id), term,
                       firstIndexOfCurrentTerm, std::move(inMemoryLog), std::move(failureOracle)) {
         }
     };
 
-    auto log = InMemoryLog::loadFromlog_core(*log_core);
+    auto log = in_memory_log::loadFromlog_core(*log_core);
     auto const lastIndex = log.getLastterm_index_pair();
     // if this assertion triggers there is an entry present in the log
     // that has the current term. Did create a different leader with the same term
@@ -372,8 +372,8 @@ auto log::log_leader::resign() && -> std::tuple<std::unique_ptr<log_core>, defer
     });
 }
 
-auto log::log_leader::readReplicatedEntryByIndex(log_index idx) const -> std::optional<PersistingLogEntry> {
-    return _guardedLeaderData.doUnderLock([&idx](auto &leaderData) -> std::optional<PersistingLogEntry> {
+auto log::log_leader::readReplicatedEntryByIndex(log_index idx) const -> std::optional<persisting_log_entry> {
+    return _guardedLeaderData.doUnderLock([&idx](auto &leaderData) -> std::optional<persisting_log_entry> {
         if (leaderData._didResign) {
             throw participant_resigned_exception(TRI_ERROR_REPLICATION_REPLICATED_LOG_LEADER_RESIGNED, ADB_HERE);
         }
@@ -458,7 +458,7 @@ auto log::log_leader::insert(log_payload payload, bool waitForSync) -> log_index
 }
 
 auto log::log_leader::insert(log_payload payload, bool waitForSync, DoNotTriggerAsyncReplication) -> log_index {
-    auto const insertTp = InMemoryLogEntry::clock::now();
+    auto const insertTp = in_memory_logEntry::clock::now();
     // Currently we use a mutex. Is this the only valid semantic?
     return _guardedLeaderData.doUnderLock([&](GuardedLeaderData &leaderData) {
         return leaderData.insertInternal(std::move(payload), waitForSync, insertTp);
@@ -466,16 +466,16 @@ auto log::log_leader::insert(log_payload payload, bool waitForSync, DoNotTrigger
 }
 
 auto log::log_leader::GuardedLeaderData::insertInternal(
-    std::variant<LogMetaPayload, log_payload> payload, bool waitForSync,
-    std::optional<InMemoryLogEntry::clock::time_point> insertTp) -> log_index {
+    std::variant<log_meta_payload, log_payload> payload, bool waitForSync,
+    std::optional<in_memory_logEntry::clock::time_point> insertTp) -> log_index {
     if (this->_didResign) {
         throw participant_resigned_exception(TRI_ERROR_REPLICATION_REPLICATED_LOG_LEADER_RESIGNED, ADB_HERE);
     }
     auto const index = this->_inMemoryLog.getNextIndex();
     auto const payloadSize = std::holds_alternative<log_payload>(payload) ? std::get<log_payload>(payload).byte_size() : 0;
-    auto logEntry = InMemoryLogEntry(PersistingLogEntry(term_index_pair {_self._currentTerm, index}, std::move(payload)),
+    auto logEntry = in_memory_logEntry(persisting_log_entry(term_index_pair {_self._currentTerm, index}, std::move(payload)),
                                      waitForSync);
-    logEntry.setInsertTp(insertTp.has_value() ? *insertTp : InMemoryLogEntry::clock::now());
+    logEntry.setInsertTp(insertTp.has_value() ? *insertTp : in_memory_logEntry::clock::now());
     this->_inMemoryLog.appendInPlace(_self._logContext, std::move(logEntry));
     _self._logMetrics->replicatedLogInsertsBytes->count(payloadSize);
     return index;
@@ -632,7 +632,7 @@ auto log::log_leader::GuardedLeaderData::createAppendEntriesRequest(
         while (auto entry = it->next()) {
             req.waitForSync |= entry->getWaitForSync();
 
-            transientEntries.push_back(InMemoryLogEntry(*entry));
+            transientEntries.push_back(in_memory_logEntry(*entry));
             sizeCounter += entry->entry().approxbyte_size();
 
             if (sizeCounter >= _self._options->_thresholdNetworkBatchSize) {
@@ -741,7 +741,7 @@ auto log::log_leader::GuardedLeaderData::handleAppendEntriesResponse(
 }
 
 auto log::log_leader::GuardedLeaderData::getInternalLogIterator(log_index firstIdx) const
-    -> std::unique_ptr<TypedLogIterator<InMemoryLogEntry>> {
+    -> std::unique_ptr<TypedLogIterator<in_memory_logEntry>> {
     auto const endIdx = _inMemoryLog.getLastterm_index_pair().index + 1;
     TRI_ASSERT(firstIdx <= endIdx);
     return _inMemoryLog.getMemtryIteratorFrom(firstIdx);
@@ -820,7 +820,7 @@ auto log::log_leader::GuardedLeaderData::get_local_statistics() const -> LogStat
 }
 
 log::log_leader::GuardedLeaderData::GuardedLeaderData(log::log_leader &self,
-                                                                InMemoryLog inMemoryLog) :
+                                                                in_memory_log inMemoryLog) :
     _self(self),
     _inMemoryLog(std::move(inMemoryLog)) {
 }
@@ -893,7 +893,7 @@ auto log::log_leader::GuardedLeaderData::waitForResign()
     }
 }
 
-auto log::log_leader::getReplicatedLogSnapshot() const -> InMemoryLog::log_type {
+auto log::log_leader::getReplicatedLogSnapshot() const -> in_memory_log::log_type {
     auto [log, commitIndex] = _guardedLeaderData.doUnderLock([](auto const &leaderData) {
         if (leaderData._didResign) {
             throw participant_resigned_exception(TRI_ERROR_REPLICATION_REPLICATED_LOG_LEADER_RESIGNED, ADB_HERE);
@@ -950,7 +950,7 @@ auto log::log_leader::waitForIterator(log_index index)
     });
 }
 
-auto log::log_leader::copyInMemoryLog() const -> log::InMemoryLog {
+auto log::log_leader::copyin_memory_log() const -> log::in_memory_log {
     return _guardedLeaderData.getLockedGuard()->_inMemoryLog;
 }
 
@@ -1044,8 +1044,8 @@ void log::log_leader::establishLeadership(std::shared_ptr<agency::participants_c
 
         // Also make sure that this entry is written with waitForSync = true to
         // ensure that entries of the previous term are synced as well.
-        auto meta = LogMetaPayload::FirstEntryOfTerm {.leader = data._self._id, .participants = *config};
-        auto firstIndex = data.insertInternal(LogMetaPayload {std::move(meta)}, true, std::nullopt);
+        auto meta = log_meta_payload::FirstEntryOfTerm {.leader = data._self._id, .participants = *config};
+        auto firstIndex = data.insertInternal(log_meta_payload {std::move(meta)}, true, std::nullopt);
         TRI_ASSERT(firstIndex == lastIndex.index + 1);
         return firstIndex;
     });
@@ -1178,8 +1178,8 @@ auto log::log_leader::updateparticipants_config(
         }
 #endif
 
-        auto meta = LogMetaPayload::Updateparticipants_config {.participants = *config};
-        auto const idx = data.insertInternal(LogMetaPayload {std::move(meta)}, true, std::nullopt);
+        auto meta = log_meta_payload::update_participants_config {.participants = *config};
+        auto const idx = data.insertInternal(log_meta_payload {std::move(meta)}, true, std::nullopt);
         data.activeparticipants_config = config;
         data._follower.swap(followers);
 

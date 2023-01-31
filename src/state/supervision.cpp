@@ -63,7 +63,7 @@ namespace paths = nil::dbms::cluster::paths::aliases;
 
 namespace nil::dbms::replication::state {
 
-    auto isParticipantSnapshotCompleted(ParticipantId const &participant,
+    auto is_participant_snapshot_completed(ParticipantId const &participant,
                                         StateGeneration expectedGeneration,
                                         RSA::Current const &current,
                                         RSA::Plan const &plan) -> bool {
@@ -84,12 +84,12 @@ namespace nil::dbms::replication::state {
         return false;
     }
 
-    auto isParticipantSnapshotCompleted(ParticipantId const &participant,
+    auto is_participant_snapshot_completed(ParticipantId const &participant,
                                         RSA::Current const &current,
                                         RSA::Plan const &plan) -> bool {
         if (auto iter = plan.participants.find(participant); iter != plan.participants.end()) {
             auto expectedGeneration = iter->second.generation;
-            return isParticipantSnapshotCompleted(participant, expectedGeneration, current, plan);
+            return is_participant_snapshot_completed(participant, expectedGeneration, current, plan);
         }
 
         return false;
@@ -104,13 +104,13 @@ namespace nil::dbms::replication::state {
      * @param state
      * @return
      */
-    auto isParticipantOk(ParticipantId const &participant, RLA::Log const &log, RSA::State const &state) {
+    auto is_participant_ok(ParticipantId const &participant, RLA::Log const &log, RSA::State const &state) {
         ADB_PROD_ASSERT(state.current.has_value());
         ADB_PROD_ASSERT(state.plan.has_value());
         ADB_PROD_ASSERT(log.plan.has_value());
 
         // check if the participant has an up-to-date snapshot
-        auto snapshotOk = isParticipantSnapshotCompleted(participant, *state.current, *state.plan);
+        auto snapshotOk = is_participant_snapshot_completed(participant, *state.current, *state.plan);
         if (!snapshotOk) {
             return false;
         }
@@ -134,12 +134,12 @@ namespace nil::dbms::replication::state {
      * @param state
      * @return
      */
-    auto countOkServers(RLA::Log const &log, RSA::State const &state) -> std::size_t {
+    auto count_ok_servers(RLA::Log const &log, RSA::State const &state) -> std::size_t {
         return std::count_if(state.plan->participants.begin(), state.plan->participants.end(),
-                             [&](auto const &p) { return isParticipantOk(p.first, log, state); });
+                             [&](auto const &p) { return is_participant_ok(p.first, log, state); });
     }
 
-    auto checkStateAdded(SupervisionContext &ctx, RSA::State const &state) {
+    auto check_state_added(SupervisionContext &ctx, RSA::State const &state) {
         auto id = state.target.id;
 
         if (!state.plan) {
@@ -166,7 +166,7 @@ namespace nil::dbms::replication::state {
         }
     }
 
-    auto checkLeaderSet(SupervisionContext &ctx, RLA::Log const &log, RSA::State const &state) {
+    auto check_leader_set(SupervisionContext &ctx, RLA::Log const &log, RSA::State const &state) {
         auto const &targetLeader = state.target.leader;
         auto const &planLeader = log.target.leader;
 
@@ -175,7 +175,7 @@ namespace nil::dbms::replication::state {
         }
     }
 
-    auto checkParticipantAdded(SupervisionContext &ctx, RLA::Log const &log, RSA::State const &state) {
+    auto check_participant_added(SupervisionContext &ctx, RLA::Log const &log, RSA::State const &state) {
         ADB_PROD_ASSERT(state.plan.has_value());
 
         auto const &targetParticipants = state.target.participants;
@@ -195,7 +195,7 @@ namespace nil::dbms::replication::state {
         }
     }
 
-    void checkTargetParticipantRemoved(SupervisionContext &ctx, RLA::Log const &log, RSA::State const &state) {
+    void check_target_participant_removed(SupervisionContext &ctx, RLA::Log const &log, RSA::State const &state) {
         ADB_PROD_ASSERT(state.plan.has_value());
 
         auto const &stateTargetParticipants = state.target.participants;
@@ -204,7 +204,7 @@ namespace nil::dbms::replication::state {
         for (auto const &[participant, flags] : logTargetParticipants) {
             if (stateTargetParticipants.find(participant) == stateTargetParticipants.end()) {
                 // check if it is ok for that participant to be dropped
-                bool isOk = isParticipantOk(participant, log, state);
+                bool isOk = is_participant_ok(participant, log, state);
                 auto newNumberOfOkServer = ctx.numberServersOk - (isOk ? 1 : 0);
 
                 if (newNumberOfOkServer >= ctx.numberServersInTarget) {
@@ -216,7 +216,7 @@ namespace nil::dbms::replication::state {
         }
     }
 
-    auto checkLogParticipantRemoved(SupervisionContext &ctx, RLA::Log const &log, RSA::State const &state) {
+    auto check_log_participant_removed(SupervisionContext &ctx, RLA::Log const &log, RSA::State const &state) {
         ADB_PROD_ASSERT(state.plan.has_value());
 
         auto const &stateTargetParticipants = state.target.participants;
@@ -245,7 +245,7 @@ namespace nil::dbms::replication::state {
 
     /* Check whether there is a participant that is excluded but reported snapshot
      * complete */
-    auto checkSnapshotComplete(SupervisionContext &ctx, RLA::Log const &log, RSA::State const &state) {
+    auto check_snapshot_complete(SupervisionContext &ctx, RLA::Log const &log, RSA::State const &state) {
         if (state.current and log.plan) {
             for (auto const &[participant, flags] : log.target.participants) {
                 if (!flags.allowedAsLeader || !flags.allowedInQuorum) {
@@ -269,7 +269,7 @@ namespace nil::dbms::replication::state {
                     // otherwise, report error
                     ctx.reportStatus(RSA::StatusCode::kServerSnapshotMissing, participant);
                 } else {
-                    ADB_PROD_ASSERT(isParticipantSnapshotCompleted(participant, *state.current, *state.plan))
+                    ADB_PROD_ASSERT(is_participant_snapshot_completed(participant, *state.current, *state.plan))
                         << "If a participant is allowed as leader and in a quorum, its "
                            "snapshot must be available";
                 }
@@ -277,7 +277,7 @@ namespace nil::dbms::replication::state {
         }
     }
 
-    auto hasConverged(RSA::State const &state) -> bool {
+    auto has_converged(RSA::State const &state) -> bool {
         if (!state.plan) {
             return false;
         }
@@ -303,7 +303,7 @@ namespace nil::dbms::replication::state {
         return true;
     }
 
-    auto checkConverged(SupervisionContext &ctx, RLA::Log const &log, RSA::State const &state) {
+    auto check_converged(SupervisionContext &ctx, RLA::Log const &log, RSA::State const &state) {
         if (!state.target.version.has_value()) {
             return;
         }
@@ -318,16 +318,16 @@ namespace nil::dbms::replication::state {
         }
 
         // now check if we actually have converged
-        if (hasConverged(state)) {
+        if (has_converged(state)) {
             ctx.createAction<CurrentConvergedAction>(*state.target.version);
         }
     }
 
-    auto isEmptyAction(Action const &action) {
+    auto is_empty_action(Action const &action) {
         return std::holds_alternative<EmptyAction>(action);
     }
 
-    auto checkReplicatedStateParticipants(SupervisionContext &ctx, RLA::Log const &log, RSA::State const &state) {
+    auto check_replicated_state_participants(SupervisionContext &ctx, RLA::Log const &log, RSA::State const &state) {
         if (!state.current.has_value()) {
             return ctx.reportStatus(RSA::StatusCode::kLogCurrentNotAvailable, "State/Current not yet populated");
         }
@@ -336,24 +336,24 @@ namespace nil::dbms::replication::state {
         }
 
         auto const serversInTarget = state.target.participants.size();
-        auto const serversOk = countOkServers(log, state);
+        auto const serversOk = count_ok_servers(log, state);
         ctx.numberServersInTarget = serversInTarget;
         ctx.numberServersOk = serversOk;
 
-        checkParticipantAdded(ctx, log, state);
-        checkTargetParticipantRemoved(ctx, log, state);
-        checkLogParticipantRemoved(ctx, log, state);
-        checkSnapshotComplete(ctx, log, state);
+        check_participant_added(ctx, log, state);
+        check_target_participant_removed(ctx, log, state);
+        check_log_participant_removed(ctx, log, state);
+        check_snapshot_complete(ctx, log, state);
     }
 
-    auto checkForwardSettings(SupervisionContext &ctx, RLA::Log const &log, RSA::State const &state) {
-        checkLeaderSet(ctx, log, state);
+    auto check_forward_settings(SupervisionContext &ctx, RLA::Log const &log, RSA::State const &state) {
+        check_leader_set(ctx, log, state);
     }
 
-    void checkReplicatedState(SupervisionContext &ctx, std::optional<RLA::Log> const &log, RSA::State const &state) {
+    void check_replicated_state(SupervisionContext &ctx, std::optional<RLA::Log> const &log, RSA::State const &state) {
         // First check if the replicated log is already there, if not create it.
         // Everything else requires the replicated log to exist.
-        checkStateAdded(ctx, state);
+        check_state_added(ctx, state);
 
         // It will need to be observable in future that we are doing nothing because
         // we're waiting for the log to appear.
@@ -365,13 +365,13 @@ namespace nil::dbms::replication::state {
         }
 
         ADB_PROD_ASSERT(state.plan.has_value());
-        checkReplicatedStateParticipants(ctx, *log, state);
-        checkForwardSettings(ctx, *log, state);
-        checkConverged(ctx, *log, state);
+        check_replicated_state_participants(ctx, *log, state);
+        check_forward_settings(ctx, *log, state);
+        check_converged(ctx, *log, state);
     }
 
     // TODO: sctx is unused
-    auto buildAgencyTransaction(DatabaseID const &database, log_id id, SupervisionContext &sctx, ActionContext &actx,
+    auto build_agency_transaction(DatabaseID const &database, log_id id, SupervisionContext &sctx, ActionContext &actx,
                                 nil::dbms::agency::envelope envelope) -> nil::dbms::agency::envelope {
         auto logTargetPath = paths::target()->replicatedLogs()->database(database)->log(id)->str();
         auto statePlanPath = paths::plan()->replicatedStates()->database(database)->state(id)->str();
@@ -411,7 +411,7 @@ namespace nil::dbms::replication::state {
             .end();
     }
 
-    auto executeCheckReplicatedState(DatabaseID const &database, RSA::State state, std::optional<RLA::Log> log,
+    auto execute_check_replicated_state(DatabaseID const &database, RSA::State state, std::optional<RLA::Log> log,
                                      nil::dbms::agency::envelope env) noexcept -> nil::dbms::agency::envelope {
         auto const now = std::chrono::system_clock::now();
         auto const id = state.target.id;
@@ -428,8 +428,8 @@ namespace nil::dbms::replication::state {
             }
         }
 
-        // now run checkReplicatedState
-        checkReplicatedState(ctx, log, state);
+        // now run check_replicated_state
+        check_replicated_state(ctx, log, state);
 
         // now check if there is status update
         if (std::holds_alternative<EmptyAction>(ctx.getAction())) {
@@ -471,7 +471,7 @@ namespace nil::dbms::replication::state {
         if (!actionCtx.has_modification()) {
             return env;
         }
-        return buildAgencyTransaction(database, id, ctx, actionCtx, std::move(env));
+        return build_agency_transaction(database, id, ctx, actionCtx, std::move(env));
     }
 
 }    // namespace nil::dbms::replication::state

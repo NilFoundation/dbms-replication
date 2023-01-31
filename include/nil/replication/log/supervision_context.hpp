@@ -63,7 +63,7 @@ namespace nil::dbms::replication::log {
         auto getAction() -> Action & {
             return _action;
         }
-        auto getReport() noexcept -> LogCurrentSupervision::StatusReport & {
+        auto getReport() noexcept -> log_current_supervision::StatusReport & {
             return _reports;
         }
 
@@ -81,7 +81,7 @@ namespace nil::dbms::replication::log {
     private:
         bool _isErrorReportingEnabled {true};
         Action _action;
-        LogCurrentSupervision::StatusReport _reports;
+        log_current_supervision::StatusReport _reports;
     };
 
 }    // namespace nil::dbms::replication::log

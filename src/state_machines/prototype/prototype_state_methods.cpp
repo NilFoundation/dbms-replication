@@ -436,7 +436,7 @@ struct prototype_state_methodsCoordinator final : prototype_state_methods,
 
                 if (options.waitForReady) {
                     // wait for the state to be ready
-                    return methods->waitForStateReady(*options.id, 1)
+                    return methods->wait_for_state_ready(*options.id, 1)
                         .thenValue([self, resp = std::move(response)](
                                        auto &&result) mutable -> futures::Future<ResultT<CreateResult>> {
                             if (result.fail()) {

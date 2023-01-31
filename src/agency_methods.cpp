@@ -74,7 +74,7 @@ namespace {
 }    // namespace
 
 auto methods::update_term_specification_trx(nil::dbms::agency::envelope envelope, DatabaseID const &database, log_id id,
-                                         LogPlanTermSpecification const &spec, std::optional <log_term> prevTerm)
+                                         log_plan_term_specification const &spec, std::optional <log_term> prevTerm)
 -> nil::dbms::agency::envelope {
     auto path = paths::plan()->replicatedLogs()->database(database)->log(to_string(id));
     auto logPath = path->str();
@@ -107,7 +107,7 @@ auto methods::update_participants_config_trx(nil::dbms::agency::envelope envelop
             .end();
 }
 
-auto methods::update_term_specification(DatabaseID const &database, log_id id, LogPlanTermSpecification const &spec,
+auto methods::update_term_specification(DatabaseID const &database, log_id id, log_plan_term_specification const &spec,
                                       std::optional <log_term> prevTerm) -> futures::Future <ResultT<uint64_t>> {
     VPackBufferUInt8 trx;
     {
@@ -202,7 +202,7 @@ auto methods::remove_election_result(nil::dbms::agency::envelope envelope, Datab
 }
 
 auto methods::update_election_result(nil::dbms::agency::envelope envelope, DatabaseID const &database, log_id id,
-                                   LogCurrentSupervisionElection const &result) -> nil::dbms::agency::envelope {
+                                   log_current_supervision_election const &result) -> nil::dbms::agency::envelope {
     auto path = paths::current()->replicatedLogs()->database(database)->log(to_string(id))->str();
 
     return envelope.write()
@@ -212,12 +212,12 @@ auto methods::update_election_result(nil::dbms::agency::envelope envelope, Datab
             .end();
 }
 
-auto methods::get_current_supervision(TRI_vocbase_t &vocbase, log_id id) -> LogCurrentSupervision {
+auto methods::get_current_supervision(TRI_vocbase_t &vocbase, log_id id) -> log_current_supervision {
     auto &agencyCache = vocbase.server().getFeature<ClusterFeature>().agencyCache();
     VPackBuilder builder;
     agencyCache.get(builder,
                     basics::StringUtils::concatT("Current/ReplicatedLogs/", vocbase.name(), "/", id, "/supervision"));
-    return velocypack::deserialize<LogCurrentSupervision>(builder.slice());
+    return velocypack::deserialize<log_current_supervision>(builder.slice());
 }
 
 namespace {

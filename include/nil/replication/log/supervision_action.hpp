@@ -35,7 +35,7 @@ using namespace nil::dbms::replication::agency;
 
 namespace nil::dbms::replication::log {
 
-    using ActionContext = ModifyContext<LogPlanSpecification, LogCurrentSupervision>;
+    using ActionContext = ModifyContext<log_plan_specification, log_current_supervision>;
 
     /* The empty action signifies that no action has been put
      * into an action context yet; we use a seprarte action
@@ -84,20 +84,20 @@ namespace nil::dbms::replication::log {
         constexpr static const char *name = "AddLogToPlanAction";
 
         AddLogToPlanAction(log_id const id, ParticipantsFlagsMap participants, log_plan_config config,
-                           std::optional<LogPlanTermSpecification::Leader> leader) :
+                           std::optional<log_plan_term_specification::Leader> leader) :
             _id(id),
             _participants(std::move(participants)), _config(std::move(config)), _leader(std::move(leader)) {};
         log_id _id;
         ParticipantsFlagsMap _participants;
         log_plan_config _config;
-        std::optional<LogPlanTermSpecification::Leader> _leader;
+        std::optional<log_plan_term_specification::Leader> _leader;
 
         auto execute(ActionContext &ctx) const -> void {
-            auto newPlan = LogPlanSpecification(
-                _id, LogPlanTermSpecification(log_term {1}, _leader),
+            auto newPlan = log_plan_specification(
+                _id, log_plan_term_specification(log_term {1}, _leader),
                 participants_config {.generation = 1, .participants = _participants, .config = _config});
             newPlan.owner = "target";
-            ctx.setValue<LogPlanSpecification>(std::move(newPlan));
+            ctx.setValue<log_plan_specification>(std::move(newPlan));
         }
     };
 
@@ -112,7 +112,7 @@ namespace nil::dbms::replication::log {
         constexpr static const char *name = "CurrentNotAvailableAction";
 
         auto execute(ActionContext &ctx) const -> void {
-            ctx.setValue<LogCurrentSupervision>();
+            ctx.setValue<log_current_supervision>();
         }
     };
     template<typename Inspector>
@@ -124,12 +124,12 @@ namespace nil::dbms::replication::log {
     struct SwitchLeaderAction {
         constexpr static const char *name = "SwitchLeaderAction";
 
-        SwitchLeaderAction(LogPlanTermSpecification::Leader const &leader) : _leader {leader} {};
+        SwitchLeaderAction(log_plan_term_specification::Leader const &leader) : _leader {leader} {};
 
-        LogPlanTermSpecification::Leader _leader;
+        log_plan_term_specification::Leader _leader;
 
         auto execute(ActionContext &ctx) const -> void {
-            ctx.modify<LogPlanSpecification>([&](LogPlanSpecification &plan) {
+            ctx.modify<log_plan_specification>([&](log_plan_specification &plan) {
                 plan.currentTerm->term = log_term {plan.currentTerm->term.value + 1};
                 plan.currentTerm->leader = _leader;
             });
@@ -148,7 +148,7 @@ namespace nil::dbms::replication::log {
         explicit WriteEmptyTermAction(log_term minTerm) : minTerm {minTerm} {};
 
         auto execute(ActionContext &ctx) const -> void {
-            ctx.modify<LogPlanSpecification>([&](LogPlanSpecification &plan) {
+            ctx.modify<log_plan_specification>([&](log_plan_specification &plan) {
                 // TODO: what to do if currentTerm does not have a value?
                 //       this shouldn't happen, but what if it does?
                 plan.currentTerm->term = log_term {minTerm.value + 1};
@@ -165,16 +165,16 @@ namespace nil::dbms::replication::log {
     struct LeaderElectionAction {
         constexpr static const char *name = "LeaderElectionAction";
 
-        LeaderElectionAction(LogPlanTermSpecification::Leader electedLeader,
-                             LogCurrentSupervisionElection const &electionReport) :
+        LeaderElectionAction(log_plan_term_specification::Leader electedLeader,
+                             log_current_supervision_election const &electionReport) :
             _electedLeader {electedLeader},
             _electionReport(electionReport) {};
 
-        LogPlanTermSpecification::Leader _electedLeader;
-        LogCurrentSupervisionElection _electionReport;
+        log_plan_term_specification::Leader _electedLeader;
+        log_current_supervision_election _electionReport;
 
         auto execute(ActionContext &ctx) const -> void {
-            ctx.modify<LogPlanSpecification>([&](LogPlanSpecification &plan) {
+            ctx.modify<log_plan_specification>([&](log_plan_specification &plan) {
                 plan.currentTerm->term = log_term {plan.currentTerm->term.value + 1};
                 plan.currentTerm->leader = _electedLeader;
             });
@@ -197,7 +197,7 @@ namespace nil::dbms::replication::log {
         ParticipantFlags _flags;
 
         auto execute(ActionContext &ctx) const -> void {
-            ctx.modify<LogPlanSpecification>([&](LogPlanSpecification &plan) {
+            ctx.modify<log_plan_specification>([&](log_plan_specification &plan) {
                 TRI_ASSERT(plan.participants_config.participants.find(_participant) !=
                            plan.participants_config.participants.end());
                 plan.participants_config.participants.at(_participant) = _flags;
@@ -223,7 +223,7 @@ namespace nil::dbms::replication::log {
         ParticipantFlags _flags;
 
         auto execute(ActionContext &ctx) const -> void {
-            ctx.modify<LogPlanSpecification>([&](LogPlanSpecification &plan) {
+            ctx.modify<log_plan_specification>([&](log_plan_specification &plan) {
                 plan.participants_config.generation += 1;
                 plan.participants_config.participants.emplace(_participant, _flags);
             });
@@ -244,7 +244,7 @@ namespace nil::dbms::replication::log {
         ParticipantId _participant;
 
         auto execute(ActionContext &ctx) const -> void {
-            ctx.modify<LogPlanSpecification>([&](LogPlanSpecification &plan) {
+            ctx.modify<log_plan_specification>([&](log_plan_specification &plan) {
                 plan.participants_config.participants.erase(_participant);
                 plan.participants_config.generation += 1;
             });
@@ -278,8 +278,8 @@ namespace nil::dbms::replication::log {
         std::optional<std::uint64_t> version {std::nullopt};
 
         auto execute(ActionContext &ctx) const -> void {
-            ctx.modify_or_create<LogCurrentSupervision>(
-                [&](LogCurrentSupervision &currentSupervision) { currentSupervision.targetVersion = version; });
+            ctx.modify_or_create<log_current_supervision>(
+                [&](log_current_supervision &currentSupervision) { currentSupervision.targetVersion = version; });
         }
     };
 

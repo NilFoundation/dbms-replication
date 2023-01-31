@@ -73,11 +73,11 @@ namespace nil::dbms::replication::state {
         agency::StatusReport _reports;
     };
 
-    void checkReplicatedState(SupervisionContext &ctx,
+    void check_replicated_state(SupervisionContext &ctx,
                               std::optional<nil::dbms::replication::agency::Log> const &log,
                               agency::State const &state);
 
-    auto executeCheckReplicatedState(DatabaseID const &database, agency::State state,
+    auto execute_check_replicated_state(DatabaseID const &database, agency::State state,
                                      std::optional<nil::dbms::replication::agency::Log> log,
                                      nil::dbms::agency::envelope) noexcept -> nil::dbms::agency::envelope;
 

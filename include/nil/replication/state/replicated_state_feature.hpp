@@ -33,7 +33,7 @@ namespace nil::dbms::replication::log {
 
 namespace nil::dbms::replication::state {
 
-    struct ReplicatedStateFeature {
+    struct replicated_state_feature {
         /**
          * Registers a new State implementation with the given name.
          * @tparam S State Machine
@@ -47,7 +47,7 @@ namespace nil::dbms::replication::state {
             static_assert(std::is_constructible<Factory, Args...>::value);
             auto factory = std::make_shared<InternalFactory<S, Factory>>(std::in_place, std::forward<Args>(args)...);
             auto [iter, wasInserted] = factories.try_emplace(std::move(name), std::move(factory));
-            assertWasInserted(name, wasInserted);
+            assert_was_inserted(name, wasInserted);
         }
 
         /**
@@ -58,12 +58,12 @@ namespace nil::dbms::replication::state {
          * @return
          */
         auto create_replicated_state(std::string_view name, std::shared_ptr<log::ReplicatedLog> log)
-            -> std::shared_ptr<ReplicatedStateBase>;
+            -> std::shared_ptr<replicated_state_base>;
 
         auto create_replicated_state(std::string_view name,
                                    std::shared_ptr<log::ReplicatedLog>
                                        log,
-                                   logger_context const &) -> std::shared_ptr<ReplicatedStateBase>;
+                                   logger_context const &) -> std::shared_ptr<replicated_state_base>;
 
         template<typename S>
         auto create_replicated_stateAs(std::string_view name, std::shared_ptr<log::ReplicatedLog> log)
@@ -72,11 +72,11 @@ namespace nil::dbms::replication::state {
         }
 
     private:
-        static void assertWasInserted(std::string_view name, bool wasInserted);
+        static void assert_was_inserted(std::string_view name, bool wasInserted);
         struct InternalFactoryBase : std::enable_shared_from_this<InternalFactoryBase> {
             virtual ~InternalFactoryBase() = default;
             virtual auto create_replicated_state(std::shared_ptr<log::ReplicatedLog>, logger_context)
-                -> std::shared_ptr<ReplicatedStateBase> = 0;
+                -> std::shared_ptr<replicated_state_base> = 0;
         };
 
         template<typename S, typename Factory>
@@ -86,13 +86,13 @@ namespace nil::dbms::replication::state {
     };
 
     template<typename S, typename Factory = typename ReplicatedStateTraits<S>::FactoryType>
-    struct ReplicatedStateFeature::InternalFactory : InternalFactoryBase, private Factory {
+    struct replicated_state_feature::InternalFactory : InternalFactoryBase, private Factory {
         template<typename... Args>
         explicit InternalFactory(std::in_place_t, Args &&...args) : Factory(std::forward<Args>(args)...) {
         }
 
         auto create_replicated_state(std::shared_ptr<log::ReplicatedLog> log, logger_context loggerContext)
-            -> std::shared_ptr<ReplicatedStateBase> override {
+            -> std::shared_ptr<replicated_state_base> override {
             return std::make_shared<ReplicatedState<S>>(std::move(log), getStateFactory(), std::move(loggerContext));
         }
 
@@ -101,12 +101,12 @@ namespace nil::dbms::replication::state {
         }
     };
 
-    struct ReplicatedStateAppFeature : DbmsdFeature, ReplicatedStateFeature {
+    struct replicated_state_app_feature : DbmsdFeature, replicated_state_feature {
         constexpr static const char *name() noexcept {
             return "state";
         }
 
-        explicit ReplicatedStateAppFeature(Server &server);
+        explicit replicated_state_app_feature(Server &server);
     };
 
 }    // namespace nil::dbms::replication::state

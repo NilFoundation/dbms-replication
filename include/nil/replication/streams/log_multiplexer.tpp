@@ -97,9 +97,9 @@ namespace nil::dbms::replication::streams {
 
         template<typename StreamDescriptor, typename T = stream_descriptor_type_t<StreamDescriptor>,
                  typename E = StreamEntryView<T>>
-        auto waitForIteratorInternal(log_index first) -> futures::Future<std::unique_ptr<Typedlog_rangeIterator<E>>> {
+        auto waitForIteratorInternal(log_index first) -> futures::Future<std::unique_ptr<typed_log_range_iterator<E>>> {
             return waitForInternal<StreamDescriptor>(first).thenValue(
-                [weak = weak_from_self(), first](auto &&) -> std::unique_ptr<Typedlog_rangeIterator<E>> {
+                [weak = weak_from_self(), first](auto &&) -> std::unique_ptr<typed_log_range_iterator<E>> {
                     if (auto that = weak.lock(); that != nullptr) {
                         return that->_guarded_data.doUnderLock([&](MultiplexerData<Spec> &self) {
                             auto &block = std::get<StreamInformationBlock<StreamDescriptor>>(self._blocks);
@@ -151,7 +151,7 @@ namespace nil::dbms::replication::streams {
 
         template<typename StreamDescriptor, typename T = stream_descriptor_type_t<StreamDescriptor>,
                  typename E = StreamEntryView<T>>
-        auto getIteratorInternal() -> std::unique_ptr<Typedlog_rangeIterator<E>> {
+        auto getIteratorInternal() -> std::unique_ptr<typed_log_range_iterator<E>> {
             return _guarded_data.doUnderLock([](MultiplexerData<Spec> &self) {
                 auto &block = self.template getBlockForDescriptor<StreamDescriptor>();
                 return block.getIterator();
@@ -329,7 +329,7 @@ namespace nil::dbms::replication::streams {
         }
 
         void digestAvailableEntries() override {
-            auto log = _interface->copyInMemoryLog();
+            auto log = _interface->copyin_memory_log();
             auto iter = log.getIteratorFrom(log_index {0});
             auto waitForIndex = this->_guarded_data.doUnderLock([&](auto &self) {
                 self.digestIterator(*iter);

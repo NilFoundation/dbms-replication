@@ -36,7 +36,7 @@ namespace paths = nil::dbms::cluster::paths::aliases;
 namespace nil::dbms::replication::log {
 
     auto executeAction(Log log, Action &action) -> ActionContext {
-        auto currentSupervision = std::invoke([&]() -> std::optional<LogCurrentSupervision> {
+        auto currentSupervision = std::invoke([&]() -> std::optional<log_current_supervision> {
             if (log.current.has_value()) {
                 return log.current->supervision;
             } else {

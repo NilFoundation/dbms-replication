@@ -44,36 +44,36 @@ namespace {
 
 }    // namespace
 
-auto state::to_string(LeaderInternalState state) noexcept -> std::string_view {
+auto state::to_string(leader_internal_state state) noexcept -> std::string_view {
     switch (state) {
-        case LeaderInternalState::kWaitingForLeadershipEstablished:
+        case leader_internal_state::kWaitingForLeadershipEstablished:
             return StringWaitingForLeadershipEstablished;
-        case LeaderInternalState::kIngestingExistingLog:
+        case leader_internal_state::kIngestingExistingLog:
             return StringIngestingExistingLog;
-        case LeaderInternalState::kRecoveryInProgress:
+        case leader_internal_state::kRecoveryInProgress:
             return StringRecoveryInProgress;
-        case LeaderInternalState::kServiceAvailable:
+        case leader_internal_state::kServiceAvailable:
             return StringServiceAvailable;
-        case LeaderInternalState::kUninitializedState:
+        case leader_internal_state::kUninitializedState:
             return StringUninitializedState;
     }
     TRI_ASSERT(false) << "invalid state value " << int(state);
     return "(unknown-internal-leader-state)";
 }
 
-auto state::to_string(FollowerInternalState state) noexcept -> std::string_view {
+auto state::to_string(follower_internal_state state) noexcept -> std::string_view {
     switch (state) {
-        case FollowerInternalState::kWaitForLeaderConfirmation:
+        case follower_internal_state::kWaitForLeaderConfirmation:
             return StringWaitForLeaderConfirmation;
-        case FollowerInternalState::kTransferSnapshot:
+        case follower_internal_state::kTransferSnapshot:
             return StringTransferSnapshot;
-        case FollowerInternalState::kNothingToApply:
+        case follower_internal_state::kNothingToApply:
             return StringNothingToApply;
-        case FollowerInternalState::kApplyRecentEntries:
+        case follower_internal_state::kApplyRecentEntries:
             return StringApplyRecentEntries;
-        case FollowerInternalState::kUninitializedState:
+        case follower_internal_state::kUninitializedState:
             return StringUninitializedState;
-        case FollowerInternalState::kSnapshotTransferFailed:
+        case follower_internal_state::kSnapshotTransferFailed:
             return StringSnapshotTransferFailed;
     }
     TRI_ASSERT(false) << "invalid state value " << int(state);
@@ -104,50 +104,50 @@ auto nil::dbms::replication::state::operator<<(std::ostream &out, StateStatus co
     return out << builder.slice().toJson();
 }
 
-auto FollowerInternalStateStringTransformer::toSerialized(FollowerInternalState source, std::string &target) const
+auto follower_internal_stateStringTransformer::toSerialized(follower_internal_state source, std::string &target) const
     -> inspection::Status {
     target = to_string(source);
     return {};
 }
 
-auto FollowerInternalStateStringTransformer::fromSerialized(std::string const &source,
-                                                            FollowerInternalState &target) const -> inspection::Status {
+auto follower_internal_stateStringTransformer::fromSerialized(std::string const &source,
+                                                            follower_internal_state &target) const -> inspection::Status {
     if (source == StringUninitializedState) {
-        target = FollowerInternalState::kUninitializedState;
+        target = follower_internal_state::kUninitializedState;
     } else if (source == StringWaitForLeaderConfirmation) {
-        target = FollowerInternalState::kWaitForLeaderConfirmation;
+        target = follower_internal_state::kWaitForLeaderConfirmation;
     } else if (source == StringTransferSnapshot) {
-        target = FollowerInternalState::kTransferSnapshot;
+        target = follower_internal_state::kTransferSnapshot;
     } else if (source == StringNothingToApply) {
-        target = FollowerInternalState::kNothingToApply;
+        target = follower_internal_state::kNothingToApply;
     } else if (source == StringApplyRecentEntries) {
-        target = FollowerInternalState::kApplyRecentEntries;
+        target = follower_internal_state::kApplyRecentEntries;
     } else if (source == StringSnapshotTransferFailed) {
-        target = FollowerInternalState::kSnapshotTransferFailed;
+        target = follower_internal_state::kSnapshotTransferFailed;
     } else {
         return inspection::Status {"unknown follower internal state " + source};
     }
     return {};
 }
 
-auto LeaderInternalStateStringTransformer::toSerialized(LeaderInternalState source, std::string &target) const
+auto leader_internal_stateStringTransformer::toSerialized(leader_internal_state source, std::string &target) const
     -> inspection::Status {
     target = to_string(source);
     return {};
 }
 
-auto LeaderInternalStateStringTransformer::fromSerialized(std::string const &source, LeaderInternalState &target) const
+auto leader_internal_stateStringTransformer::fromSerialized(std::string const &source, leader_internal_state &target) const
     -> inspection::Status {
     if (source == StringUninitializedState) {
-        target = LeaderInternalState::kUninitializedState;
+        target = leader_internal_state::kUninitializedState;
     } else if (source == StringIngestingExistingLog) {
-        target = LeaderInternalState::kIngestingExistingLog;
+        target = leader_internal_state::kIngestingExistingLog;
     } else if (source == StringRecoveryInProgress) {
-        target = LeaderInternalState::kRecoveryInProgress;
+        target = leader_internal_state::kRecoveryInProgress;
     } else if (source == StringServiceAvailable) {
-        target = LeaderInternalState::kServiceAvailable;
+        target = leader_internal_state::kServiceAvailable;
     } else if (source == StringWaitingForLeadershipEstablished) {
-        target = LeaderInternalState::kWaitingForLeadershipEstablished;
+        target = leader_internal_state::kWaitingForLeadershipEstablished;
     } else {
         return inspection::Status {"unknown leader internal state " + source};
     }

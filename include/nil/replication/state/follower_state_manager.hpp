@@ -37,7 +37,7 @@ namespace nil::dbms::replication::state {
         using Stream = streams::Stream<EntryType>;
         using Iterator = typename Stream::Iterator;
 
-        FollowerStateManager(logger_context loggerContext, std::shared_ptr<ReplicatedStateBase> parent,
+        FollowerStateManager(logger_context loggerContext, std::shared_ptr<replicated_state_base> parent,
                              std::shared_ptr<log::ILogFollower> logFollower, std::unique_ptr<CoreType> core,
                              std::unique_ptr<ReplicatedStateToken> token, std::shared_ptr<Factory> factory) noexcept;
 
@@ -75,7 +75,7 @@ namespace nil::dbms::replication::state {
             std::shared_ptr<Stream> stream;
             std::shared_ptr<IReplicatedFollowerState<S>> state;
 
-            FollowerInternalState internalState {FollowerInternalState::kUninitializedState};
+            follower_internal_state internalState {follower_internal_state::kUninitializedState};
             std::chrono::system_clock::time_point lastInternalStateChange;
             std::optional<log_range> ingestionRange;
             std::optional<Result> lastError;
@@ -90,8 +90,8 @@ namespace nil::dbms::replication::state {
 
             guarded_data(FollowerStateManager &self, std::unique_ptr<CoreType> core,
                         std::unique_ptr<ReplicatedStateToken> token);
-            void updateInternalState(FollowerInternalState newState, std::optional<log_range> range = std::nullopt);
-            void updateInternalState(FollowerInternalState newState, Result);
+            void updateInternalState(follower_internal_state newState, std::optional<log_range> range = std::nullopt);
+            void updateInternalState(follower_internal_state newState, Result);
             auto updateNextIndex(log_index nextWaitForIndex) -> deferred_action;
         };
 
@@ -99,7 +99,7 @@ namespace nil::dbms::replication::state {
         void handleAwaitLeadershipResult(futures::Future<log::wait_for_result> &&);
 
         Guarded<guarded_data> _guarded_data;
-        std::weak_ptr<ReplicatedStateBase> const parent;
+        std::weak_ptr<replicated_state_base> const parent;
         std::shared_ptr<log::ILogFollower> const logFollower;
         std::shared_ptr<Factory> const factory;
         logger_context const loggerContext;

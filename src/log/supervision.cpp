@@ -64,7 +64,7 @@ namespace nil::dbms::replication::log {
 
     // Leader has failed if it is marked as failed or its rebootId is
     // different from what is expected
-    auto isLeaderFailed(LogPlanTermSpecification::Leader const &leader, ParticipantsHealth const &health) -> bool {
+    auto isLeaderFailed(log_plan_term_specification::Leader const &leader, ParticipantsHealth const &health) -> bool {
         // TODO: less obscure with fewer negations
         // TODO: write test first
         if (health.notIsFailed(leader.serverId) and health.validRebootId(leader.serverId, leader.rebootId)) {
@@ -107,22 +107,22 @@ namespace nil::dbms::replication::log {
     // Check whether Target contains an entry for a leader, which means
     // that the user would like a particular participant to be leader;
 
-    auto computeReason(std::optional<LogCurrentLocalState> const &maybeStatus, bool healthy, bool excluded,
-                       log_term term) -> LogCurrentSupervisionElection::ErrorCode {
+    auto computeReason(std::optional<log_current_local_state> const &maybeStatus, bool healthy, bool excluded,
+                       log_term term) -> log_current_supervision_election::ErrorCode {
         if (!healthy) {
-            return LogCurrentSupervisionElection::ErrorCode::SERVER_NOT_GOOD;
+            return log_current_supervision_election::ErrorCode::SERVER_NOT_GOOD;
         } else if (excluded) {
-            return LogCurrentSupervisionElection::ErrorCode::SERVER_EXCLUDED;
+            return log_current_supervision_election::ErrorCode::SERVER_EXCLUDED;
         } else if (!maybeStatus or term != maybeStatus->term) {
-            return LogCurrentSupervisionElection::ErrorCode::TERM_NOT_CONFIRMED;
+            return log_current_supervision_election::ErrorCode::TERM_NOT_CONFIRMED;
         } else {
-            return LogCurrentSupervisionElection::ErrorCode::OK;
+            return log_current_supervision_election::ErrorCode::OK;
         }
     }
 
-    auto runElectionCampaign(LogCurrentLocalStates const &states, participants_config const &participants_config,
-                             ParticipantsHealth const &health, log_term term) -> LogCurrentSupervisionElection {
-        auto election = LogCurrentSupervisionElection();
+    auto runElectionCampaign(log_current_local_states const &states, participants_config const &participants_config,
+                             ParticipantsHealth const &health, log_term term) -> log_current_supervision_election {
+        auto election = log_current_supervision_election();
         election.term = term;
 
         for (auto const &[participant, flags] : participants_config.participants) {
@@ -130,7 +130,7 @@ namespace nil::dbms::replication::log {
             auto const healthy = health.notIsFailed(participant);
 
             auto maybeStatus = std::invoke(
-                [&states](ParticipantId const &participant) -> std::optional<LogCurrentLocalState> {
+                [&states](ParticipantId const &participant) -> std::optional<log_current_local_state> {
                     auto status = states.find(participant);
                     if (status != states.end()) {
                         return status->second;
@@ -143,7 +143,7 @@ namespace nil::dbms::replication::log {
             auto reason = computeReason(maybeStatus, healthy, excluded, term);
             election.detail.emplace(participant, reason);
 
-            if (reason == LogCurrentSupervisionElection::ErrorCode::OK) {
+            if (reason == log_current_supervision_election::ErrorCode::OK) {
                 election.participantsAvailable += 1;
 
                 if (maybeStatus->spearhead >= election.bestTermIndex) {
@@ -197,7 +197,7 @@ namespace nil::dbms::replication::log {
 
         // Check whether there are enough participants to reach a quorum
         if (plan.participants_config.participants.size() + 1 <= plan.participants_config.config.effectiveWriteConcern) {
-            ctx.reportStatus<LogCurrentSupervision::LeaderElectionImpossible>();
+            ctx.reportStatus<log_current_supervision::LeaderElectionImpossible>();
             ctx.createAction<NoActionPossibleAction>();
             return;
         }
@@ -216,7 +216,7 @@ namespace nil::dbms::replication::log {
 
         if (numElectible == 0 || numElectible > std::numeric_limits<uint16_t>::max()) {
             // TODO: enter some detail about numElectible
-            ctx.reportStatus<LogCurrentSupervision::LeaderElectionOutOfBounds>();
+            ctx.reportStatus<log_current_supervision::LeaderElectionOutOfBounds>();
             ctx.createAction<NoActionPossibleAction>();
             return;
         }
@@ -228,8 +228,8 @@ namespace nil::dbms::replication::log {
             auto const &newLeaderRebootId = health.getRebootId(newLeader);
 
             if (newLeaderRebootId.has_value()) {
-                ctx.reportStatus<LogCurrentSupervision::LeaderElectionSuccess>(election);
-                ctx.createAction<LeaderElectionAction>(LogPlanTermSpecification::Leader(newLeader, *newLeaderRebootId),
+                ctx.reportStatus<log_current_supervision::LeaderElectionSuccess>(election);
+                ctx.createAction<LeaderElectionAction>(log_plan_term_specification::Leader(newLeader, *newLeaderRebootId),
                                                        election);
                 return;
             } else {
@@ -241,7 +241,7 @@ namespace nil::dbms::replication::log {
         } else {
             // Not enough participants were available to form a quorum, so
             // we can't elect a leader
-            ctx.reportStatus<LogCurrentSupervision::LeaderElectionQuorumNotReached>(election);
+            ctx.reportStatus<log_current_supervision::LeaderElectionQuorumNotReached>(election);
             ctx.createAction<NoActionPossibleAction>();
             return;
         }
@@ -315,7 +315,7 @@ namespace nil::dbms::replication::log {
         auto const &current = *log.current;
 
         if (!isConfigurationCommitted(log)) {
-            ctx.reportStatus<LogCurrentSupervision::WaitingForConfigCommitted>();
+            ctx.reportStatus<log_current_supervision::WaitingForConfigCommitted>();
             return;
         }
         auto const &committedParticipants = current.leader->committedparticipants_config->participants;
@@ -335,11 +335,11 @@ namespace nil::dbms::replication::log {
                 if (participant != current.leader->serverId and flags.forced) {
                     auto const &rebootId = health.getRebootId(participant);
                     if (rebootId.has_value()) {
-                        ctx.createAction<SwitchLeaderAction>(LogPlanTermSpecification::Leader {participant, *rebootId});
+                        ctx.createAction<SwitchLeaderAction>(log_plan_term_specification::Leader {participant, *rebootId});
                         return;
                     } else {
                         // TODO: this should get the participant
-                        ctx.reportStatus<LogCurrentSupervision::SwitchLeaderFailed>();
+                        ctx.reportStatus<log_current_supervision::SwitchLeaderFailed>();
                     }
                 }
             }
@@ -359,12 +359,12 @@ namespace nil::dbms::replication::log {
                 ctx.createAction<UpdateParticipantFlagsAction>(chosenOne, flags);
             } else {
                 // We did not have a selectable leader
-                ctx.reportStatus<LogCurrentSupervision::SwitchLeaderFailed>();
+                ctx.reportStatus<log_current_supervision::SwitchLeaderFailed>();
             }
         }
     }
 
-    auto checkLeaderSetInTarget(SupervisionContext &ctx, Log const &log, ParticipantsHealth const &health) -> void {
+    auto check_leader_setInTarget(SupervisionContext &ctx, Log const &log, ParticipantsHealth const &health) -> void {
         auto const &target = log.target;
 
         if (!log.plan.has_value()) {
@@ -379,12 +379,12 @@ namespace nil::dbms::replication::log {
                 plan.participants_config.participants.end()) {
                 // TODO: Add detail which leader we find invalid (or even rename this
                 // status code to leader not a participant)
-                ctx.reportStatus<LogCurrentSupervision::TargetLeaderInvalid>();
+                ctx.reportStatus<log_current_supervision::TargetLeaderInvalid>();
                 return;
             }
 
             if (!health.notIsFailed(*target.leader)) {
-                ctx.reportStatus<LogCurrentSupervision::TargetLeaderFailed>();
+                ctx.reportStatus<log_current_supervision::TargetLeaderFailed>();
                 return;
             };
 
@@ -401,21 +401,21 @@ namespace nil::dbms::replication::log {
                 }
 
                 if (!planLeaderConfig.allowedAsLeader) {
-                    ctx.reportStatus<LogCurrentSupervision::TargetLeaderExcluded>();
+                    ctx.reportStatus<log_current_supervision::TargetLeaderExcluded>();
                     return;
                 }
 
                 if (!isConfigurationCommitted(log)) {
-                    ctx.reportStatus<LogCurrentSupervision::WaitingForConfigCommitted>();
+                    ctx.reportStatus<log_current_supervision::WaitingForConfigCommitted>();
                     ctx.createAction<NoActionPossibleAction>();
                     return;
                 }
 
                 auto const &rebootId = health.getRebootId(*target.leader);
                 if (rebootId.has_value()) {
-                    ctx.createAction<SwitchLeaderAction>(LogPlanTermSpecification::Leader {*target.leader, *rebootId});
+                    ctx.createAction<SwitchLeaderAction>(log_plan_term_specification::Leader {*target.leader, *rebootId});
                 } else {
-                    ctx.reportStatus<LogCurrentSupervision::TargetLeaderInvalid>();
+                    ctx.reportStatus<log_current_supervision::TargetLeaderInvalid>();
                 }
             }
         }
@@ -447,7 +447,7 @@ namespace nil::dbms::replication::log {
 
     auto pickLeader(std::optional<ParticipantId> targetLeader, ParticipantsFlagsMap const &participants,
                     ParticipantsHealth const &health, uint64_t log_id)
-        -> std::optional<LogPlanTermSpecification::Leader> {
+        -> std::optional<log_plan_term_specification::Leader> {
         auto leaderId = targetLeader;
 
         if (!leaderId) {
@@ -457,7 +457,7 @@ namespace nil::dbms::replication::log {
         if (leaderId.has_value()) {
             auto const &rebootId = health.getRebootId(*leaderId);
             if (rebootId.has_value()) {
-                return LogPlanTermSpecification::Leader {*leaderId, *rebootId};
+                return log_plan_term_specification::Leader {*leaderId, *rebootId};
             }
         };
 
@@ -470,7 +470,7 @@ namespace nil::dbms::replication::log {
             // The log is not planned right now, so we create it
             // provided we have enough participants
             if (target.participants.size() + 1 < target.config.writeConcern) {
-                ctx.reportStatus<LogCurrentSupervision::TargetNotEnoughParticipants>();
+                ctx.reportStatus<log_current_supervision::TargetNotEnoughParticipants>();
                 ctx.createAction<NoActionPossibleAction>();
             } else {
                 auto leader = pickLeader(target.leader, target.participants, health, log.target.id.id());
@@ -547,7 +547,7 @@ namespace nil::dbms::replication::log {
                     ctx.createAction<UpdateParticipantFlagsAction>(maybeRemovedParticipant, newFlags);
                 } else {
                     // still waiting
-                    ctx.reportStatus<LogCurrentSupervision::WaitingForConfigCommitted>();
+                    ctx.reportStatus<log_current_supervision::WaitingForConfigCommitted>();
                 }
             }
         }
@@ -576,10 +576,10 @@ namespace nil::dbms::replication::log {
     }
 
     auto checkConfigUpdated(SupervisionContext &ctx, Log const &log, ParticipantsHealth const &health) -> void {
-        ctx.reportStatus<LogCurrentSupervision::ConfigChangeNotImplemented>();
+        ctx.reportStatus<log_current_supervision::ConfigChangeNotImplemented>();
     }
 
-    auto checkConverged(SupervisionContext &ctx, Log const &log) {
+    auto check_converged(SupervisionContext &ctx, Log const &log) {
         auto const &target = log.target;
 
         if (!log.current.has_value()) {
@@ -659,7 +659,7 @@ namespace nil::dbms::replication::log {
         //
         // This operation can fail and
         // TODO: Report if leaderInTarget fails.
-        checkLeaderSetInTarget(ctx, log, health);
+        check_leader_setInTarget(ctx, log, health);
 
         // If the user has updated flags for a participant, which is detected by
         // comparing Target to Plan, write that change to Plan.
@@ -672,7 +672,7 @@ namespace nil::dbms::replication::log {
 
         // Check whether we have converged, and if so, report and set version
         // to target version
-        checkConverged(ctx, log);
+        check_converged(ctx, log);
     }
 
     auto executeCheckReplicatedLog(DatabaseID const &dbName, std::string const &log_idString, Log log,
@@ -722,30 +722,30 @@ namespace nil::dbms::replication::log {
         if (sctx.isErrorReportingEnabled()) {
             if (sctx.getReport().empty()) {
                 if (hasStatusReport) {
-                    actionCtx.modify<LogCurrentSupervision>(
+                    actionCtx.modify<log_current_supervision>(
                         [&](auto &supervision) { supervision.statusReport.reset(); });
                 }
             } else {
-                actionCtx.modify<LogCurrentSupervision>(
+                actionCtx.modify<log_current_supervision>(
                     [&](auto &supervision) { supervision.statusReport = std::move(sctx.getReport()); });
             }
         } else if (std::holds_alternative<ConvergedToTargetAction>(sctx.getAction())) {
-            actionCtx.modify<LogCurrentSupervision>([&](auto &supervision) { supervision.statusReport.reset(); });
+            actionCtx.modify<log_current_supervision>([&](auto &supervision) { supervision.statusReport.reset(); });
         }
 
         // update last time modified
         if (!hasNoExecutableAction) {
-            actionCtx.modify<LogCurrentSupervision>([&](auto &supervision) { supervision.lastTimeModified = now; });
+            actionCtx.modify<log_current_supervision>([&](auto &supervision) { supervision.lastTimeModified = now; });
         }
 
         if (!actionCtx.has_modification()) {
             return envelope;
         }
 
-        return buildAgencyTransaction(dbName, log_id, sctx, actionCtx, maxActionsTraceLength, std::move(envelope));
+        return build_agency_transaction(dbName, log_id, sctx, actionCtx, maxActionsTraceLength, std::move(envelope));
     }
 
-    auto buildAgencyTransaction(DatabaseID const &dbName, log_id const &log_id, SupervisionContext &sctx,
+    auto build_agency_transaction(DatabaseID const &dbName, log_id const &log_id, SupervisionContext &sctx,
                                 ActionContext &actx, size_t maxActionsTraceLength, nil::dbms::agency::envelope envelope)
         -> nil::dbms::agency::envelope {
         auto planPath = paths::plan()->replicatedLogs()->database(dbName)->log(log_id)->str();
@@ -783,18 +783,18 @@ namespace nil::dbms::replication::log {
             // this is here to trigger all waitForPlan, even if we only
             // update current.
             .inc(paths::plan()->version()->str())
-            .cond(actx.has_modification_for<LogPlanSpecification>(),
+            .cond(actx.has_modification_for<log_plan_specification>(),
                   [&](nil::dbms::agency::envelope::write_trx &&trx) {
                       return std::move(trx).emplace_object(planPath, [&](VPackBuilder &builder) {
-                          velocypack::serialize(builder, actx.getValue<LogPlanSpecification>());
+                          velocypack::serialize(builder, actx.getValue<log_plan_specification>());
                       });
                   })
-            .cond(actx.has_modification_for<LogCurrentSupervision>(),
+            .cond(actx.has_modification_for<log_current_supervision>(),
                   [&](nil::dbms::agency::envelope::write_trx &&trx) {
                       return std::move(trx)
                           .emplace_object(currentSupervisionPath,
                                           [&](VPackBuilder &builder) {
-                                              velocypack::serialize(builder, actx.getValue<LogCurrentSupervision>());
+                                              velocypack::serialize(builder, actx.getValue<log_current_supervision>());
                                           })
                           .inc(paths::current()->version()->str());
                   })

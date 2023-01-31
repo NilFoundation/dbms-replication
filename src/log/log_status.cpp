@@ -217,9 +217,9 @@ void global_status::SupervisionStatus::to_velocy_pack(nil::dbms::velocypack::Bui
 auto global_status::SupervisionStatus::from_velocy_pack(nil::dbms::velocypack::Slice s)
     -> global_status::SupervisionStatus {
     auto connection = global_status_connection::from_velocy_pack(s.get("connection"));
-    auto const response = std::invoke([&s]() -> std::optional<agency::LogCurrentSupervision> {
+    auto const response = std::invoke([&s]() -> std::optional<agency::log_current_supervision> {
         if (auto rs = s.get("response"); !rs.isNone()) {
-            return velocypack::deserialize<agency::LogCurrentSupervision>(rs);
+            return velocypack::deserialize<agency::log_current_supervision>(rs);
         }
         return std::nullopt;
     });
@@ -260,7 +260,7 @@ void global_status::Specification::to_velocy_pack(nil::dbms::velocypack::Builder
 }
 
 auto global_status::Specification::from_velocy_pack(nil::dbms::velocypack::Slice s) -> Specification {
-    auto plan = velocypack::deserialize<agency::LogPlanSpecification>(s.get("plan"));
+    auto plan = velocypack::deserialize<agency::log_plan_specification>(s.get("plan"));
     auto source = global_status::SpecificationSource::kLocalCache;
     if (s.get("source").isEqualString("RemoteAgency")) {
         source = global_status::SpecificationSource::kRemoteAgency;

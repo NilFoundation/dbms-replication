@@ -28,11 +28,11 @@
 using namespace nil::dbms;
 using namespace nil::dbms::replication;
 
-auto state::ReplicatedStateFeature::create_replicated_state(std::string_view name,
+auto state::replicated_state_feature::create_replicated_state(std::string_view name,
                                                                      std::shared_ptr<log::ReplicatedLog>
                                                                          log,
                                                                      logger_context const &loggerContext)
-    -> std::shared_ptr<ReplicatedStateBase> {
+    -> std::shared_ptr<replicated_state_base> {
     auto name_str = std::string {name};
     if (auto iter = factories.find(name_str); iter != std::end(factories)) {
         auto log_id = log->getId();
@@ -43,18 +43,18 @@ auto state::ReplicatedStateFeature::create_replicated_state(std::string_view nam
     THROW_DBMS_EXCEPTION(TRI_ERROR_DBMS_DATA_SOURCE_NOT_FOUND);    // TODO fix error code
 }
 
-auto state::ReplicatedStateFeature::create_replicated_state(std::string_view name,
+auto state::replicated_state_feature::create_replicated_state(std::string_view name,
                                                                      std::shared_ptr<log::ReplicatedLog>
-                                                                         log) -> std::shared_ptr<ReplicatedStateBase> {
+                                                                         log) -> std::shared_ptr<replicated_state_base> {
     return create_replicated_state(name, std::move(log), logger_context(Logger::REPLICATED_STATE));
 }
 
-void state::ReplicatedStateFeature::assertWasInserted(std::string_view name, bool wasInserted) {
+void state::replicated_state_feature::assert_was_inserted(std::string_view name, bool wasInserted) {
     if (!wasInserted) {
         LOG_TOPIC("5b761", FATAL, Logger::REPLICATED_STATE) << "register state type with duplicated name " << name;
         FATAL_ERROR_EXIT();
     }
 }
 
-state::ReplicatedStateAppFeature::ReplicatedStateAppFeature(Server &server) : DbmsdFeature {server, *this} {
+state::replicated_state_app_feature::replicated_state_app_feature(Server &server) : DbmsdFeature {server, *this} {
 }

@@ -32,7 +32,7 @@ namespace nil::dbms::replication::streams {
         static_assert(is_stream_descriptor_v<Descriptor>);
 
         using ValueType = stream_descriptor_type_t<Descriptor>;
-        using Iterator = Typedlog_rangeIterator<StreamEntryView<ValueType>>;
+        using Iterator = typed_log_range_iterator<StreamEntryView<ValueType>>;
         using wait_for_result = typename StreamInterface<ValueType>::wait_for_result;
 
         auto waitForIterator(log_index index) -> futures::Future<std::unique_ptr<Iterator>> override final {

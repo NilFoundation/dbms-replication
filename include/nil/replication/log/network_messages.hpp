@@ -119,7 +119,7 @@ namespace nil::dbms::replication::log {
 #endif
 
     struct AppendEntriesRequest {
-        using EntryContainer = ::immer::flex_vector<InMemoryLogEntry, nil::dbms::immer::dbms_memory_policy>;
+        using EntryContainer = ::immer::flex_vector<in_memory_logEntry, nil::dbms::immer::dbms_memory_policy>;
 
         log_term leaderTerm;
         ParticipantId leaderId;

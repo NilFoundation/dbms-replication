@@ -41,37 +41,37 @@ log_plan_config::log_plan_config(std::size_t writeConcern, std::size_t softWrite
     effectiveWriteConcern(writeConcern), waitForSync(waitForSync) {
 }
 
-LogPlanTermSpecification::LogPlanTermSpecification(log_term term, std::optional<Leader> leader) :
+log_plan_term_specification::log_plan_term_specification(log_term term, std::optional<Leader> leader) :
     term(term), leader(std::move(leader)) {
 }
 
-LogPlanSpecification::LogPlanSpecification(log_id id, std::optional<LogPlanTermSpecification> term) :
+log_plan_specification::log_plan_specification(log_id id, std::optional<log_plan_term_specification> term) :
     id(id), currentTerm(std::move(term)) {
 }
 
-LogPlanSpecification::LogPlanSpecification(log_id id, std::optional<LogPlanTermSpecification> term,
+log_plan_specification::log_plan_specification(log_id id, std::optional<log_plan_term_specification> term,
                                            participants_config participants_config) :
     id(id),
     currentTerm(std::move(term)), participants_config(std::move(participants_config)) {
 }
 
-LogCurrentLocalState::LogCurrentLocalState(log_term term, term_index_pair spearhead) noexcept :
+log_current_local_state::log_current_local_state(log_term term, term_index_pair spearhead) noexcept :
     term(term), spearhead(spearhead) {
 }
 
-auto agency::to_string(LogCurrentSupervisionElection::ErrorCode ec) noexcept -> std::string_view {
+auto agency::to_string(log_current_supervision_election::ErrorCode ec) noexcept -> std::string_view {
     switch (ec) {
-        case LogCurrentSupervisionElection::ErrorCode::OK:
+        case log_current_supervision_election::ErrorCode::OK:
             return "the server is ok";
-        case LogCurrentSupervisionElection::ErrorCode::SERVER_NOT_GOOD:
+        case log_current_supervision_election::ErrorCode::SERVER_NOT_GOOD:
             return "the server is not reported as good in Supervision/Health";
-        case LogCurrentSupervisionElection::ErrorCode::TERM_NOT_CONFIRMED:
+        case log_current_supervision_election::ErrorCode::TERM_NOT_CONFIRMED:
             return "the server has not (yet) confirmed the current term";
-        case LogCurrentSupervisionElection::ErrorCode::SERVER_EXCLUDED:
+        case log_current_supervision_election::ErrorCode::SERVER_EXCLUDED:
             return "the server is configured as excluded";
     }
     LOG_TOPIC("7e572", FATAL, nil::dbms::Logger::replication)
-        << "Invalid LogCurrentSupervisionElection::ErrorCode " << static_cast<std::underlying_type_t<decltype(ec)>>(ec);
+        << "Invalid log_current_supervision_election::ErrorCode " << static_cast<std::underlying_type_t<decltype(ec)>>(ec);
     FATAL_ERROR_ABORT();
 }
 

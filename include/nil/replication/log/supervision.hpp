@@ -33,15 +33,15 @@ using namespace nil::dbms::replication::agency;
 
 namespace nil::dbms::replication::log {
 
-    using LogCurrentLocalStates = std::unordered_map<ParticipantId, LogCurrentLocalState>;
+    using log_current_local_states = std::unordered_map<ParticipantId, log_current_local_state>;
 
-    auto isLeaderFailed(LogPlanTermSpecification::Leader const &leader, ParticipantsHealth const &health) -> bool;
+    auto isLeaderFailed(log_plan_term_specification::Leader const &leader, ParticipantsHealth const &health) -> bool;
 
-    auto computeReason(std::optional<LogCurrentLocalState> const &maybeStatus, bool healthy, bool excluded,
-                       log_term term) -> LogCurrentSupervisionElection::ErrorCode;
+    auto computeReason(std::optional<log_current_local_state> const &maybeStatus, bool healthy, bool excluded,
+                       log_term term) -> log_current_supervision_election::ErrorCode;
 
-    auto runElectionCampaign(LogCurrentLocalStates const &states, participants_config const &participants_config,
-                             ParticipantsHealth const &health, log_term term) -> LogCurrentSupervisionElection;
+    auto runElectionCampaign(log_current_local_states const &states, participants_config const &participants_config,
+                             ParticipantsHealth const &health, log_term term) -> log_current_supervision_election;
 
     auto getParticipantsAcceptableAsLeaders(ParticipantId const &currentLeader,
                                             ParticipantsFlagsMap const &participants) -> std::vector<ParticipantId>;
@@ -54,7 +54,7 @@ namespace nil::dbms::replication::log {
                                    ParticipantsHealth const &health, nil::dbms::agency::envelope envelope) noexcept
         -> nil::dbms::agency::envelope;
 
-    auto buildAgencyTransaction(DatabaseID const &dbName, log_id const &log_id, SupervisionContext &sctx,
+    auto build_agency_transaction(DatabaseID const &dbName, log_id const &log_id, SupervisionContext &sctx,
                                 ActionContext &actx, size_t maxActionsTraceLength, nil::dbms::agency::envelope envelope)
         -> nil::dbms::agency::envelope;
 

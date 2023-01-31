@@ -82,7 +82,7 @@ auto LogUnconfiguredParticipant::waitForResign() -> futures::Future<futures::Uni
     return std::move(future);
 }
 
-auto LogUnconfiguredParticipant::copyInMemoryLog() const -> InMemoryLog {
+auto LogUnconfiguredParticipant::copyin_memory_log() const -> in_memory_log {
     THROW_DBMS_EXCEPTION(TRI_ERROR_REPLICATION_REPLICATED_LOG_UNCONFIGURED);
 }
 

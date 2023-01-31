@@ -255,7 +255,7 @@ auto log::AppendEntriesRequest::from_velocy_pack(velocypack::Slice slice) -> App
         auto entriesVp = velocypack::ArrayIterator(slice.get("entries"));
         auto transientEntries = EntryContainer::transient_type {};
         std::transform(entriesVp.begin(), entriesVp.end(), std::back_inserter(transientEntries),
-                       [](auto const &it) { return InMemoryLogEntry(PersistingLogEntry::from_velocy_pack(it)); });
+                       [](auto const &it) { return in_memory_logEntry(persisting_log_entry::from_velocy_pack(it)); });
         return std::move(transientEntries).persistent();
     });
 

@@ -50,9 +50,9 @@ using namespace nil::dbms::replication;
 using namespace nil::dbms::replication::log;
 
 namespace {
-    struct replicated_log_methodsDBServer final : replicated_log_methods,
-                                                std::enable_shared_from_this<replicated_log_methodsDBServer> {
-        explicit replicated_log_methodsDBServer(TRI_vocbase_t &vocbase) : vocbase(vocbase) {
+    struct replicated_log_methods_db_server final : replicated_log_methods,
+                                                std::enable_shared_from_this<replicated_log_methods_db_server> {
+        explicit replicated_log_methods_db_server(TRI_vocbase_t &vocbase) : vocbase(vocbase) {
         }
         auto wait_for_log_ready(log_id id, std::uint64_t version) const
             -> futures::Future<ResultT<consensus::index_t>> override {
@@ -96,8 +96,8 @@ namespace {
         }
 
         auto get_log_entry_by_index(log_id id, log_index index) const
-            -> futures::Future<std::optional<PersistingLogEntry>> override {
-            auto entry = vocbase.getReplicatedLogById(id)->getParticipant()->copyInMemoryLog().getEntryByIndex(index);
+            -> futures::Future<std::optional<persisting_log_entry>> override {
+            auto entry = vocbase.getReplicatedLogById(id)->getParticipant()->copyin_memory_log().getEntryByIndex(index);
             if (entry.has_value()) {
                 return entry->entry();
             } else {
@@ -107,7 +107,7 @@ namespace {
 
         auto slice(log_id id, log_index start, log_index stop) const
             -> futures::Future<std::unique_ptr<persisted_logIterator>> override {
-            return vocbase.getReplicatedLogById(id)->getParticipant()->copyInMemoryLog().getInternalIteratorRange(start,
+            return vocbase.getReplicatedLogById(id)->getParticipant()->copyin_memory_log().getInternalIteratorRange(start,
                                                                                                                   stop);
         }
 
@@ -117,14 +117,14 @@ namespace {
             return vocbase.getReplicatedLogById(id)->getParticipant()->waitFor(index).thenValue(
                 [index, limit, leader = std::move(leader),
                  self = shared_from_this()](auto &&) -> std::unique_ptr<persisted_logIterator> {
-                    auto log = leader->copyInMemoryLog();
+                    auto log = leader->copyin_memory_log();
                     return log.getInternalIteratorRange(index, index + limit);
                 });
         }
 
         auto tail(log_id id, std::size_t limit) const
             -> futures::Future<std::unique_ptr<persisted_logIterator>> override {
-            auto log = vocbase.getReplicatedLogById(id)->getParticipant()->copyInMemoryLog();
+            auto log = vocbase.getReplicatedLogById(id)->getParticipant()->copyin_memory_log();
             auto stop = log.getNextIndex();
             auto start = stop.saturatedDecrement(limit);
             return log.getInternalIteratorRange(start, stop);
@@ -132,7 +132,7 @@ namespace {
 
         auto head(log_id id, std::size_t limit) const
             -> futures::Future<std::unique_ptr<persisted_logIterator>> override {
-            auto log = vocbase.getReplicatedLogById(id)->getParticipant()->copyInMemoryLog();
+            auto log = vocbase.getReplicatedLogById(id)->getParticipant()->copyin_memory_log();
             auto start = log.getFirstIndex();
             return log.getInternalIteratorRange(start, start + limit);
         }
@@ -182,9 +182,9 @@ namespace {
                 buffer(std::move(buffer_ptr)), iter(VPackSlice(buffer->data()).get("result")), end(iter.end()) {
             }
 
-            auto next() -> std::optional<PersistingLogEntry> override {
+            auto next() -> std::optional<persisting_log_entry> override {
                 while (iter != end) {
-                    return PersistingLogEntry::from_velocy_pack(*iter++);
+                    return persisting_log_entry::from_velocy_pack(*iter++);
                 }
                 return std::nullopt;
             }
@@ -222,7 +222,7 @@ namespace {
                         return false;
                     }
 
-                    auto supervision = velocypack::deserialize<replication::agency::LogCurrentSupervision>(slice);
+                    auto supervision = velocypack::deserialize<replication::agency::log_current_supervision>(slice);
                     if (supervision.targetVersion >= ctx->version) {
                         ctx->promise.setValue(ResultT<consensus::index_t> {index});
                         return true;
@@ -286,7 +286,7 @@ namespace {
             }
         }
 
-        static auto createTargetFromCreateOptions(CreateOptions const &options) -> replication::agency::LogTarget {
+        static auto create_target_from_create_options(CreateOptions const &options) -> replication::agency::LogTarget {
             replication::agency::LogTarget target;
             target.id = options.id.value();
             target.config = options.config.value();
@@ -301,7 +301,7 @@ namespace {
         auto create_replicated_log(CreateOptions options) const -> futures::Future<ResultT<CreateResult>> override {
             fillCreateOptions(options);
             TRI_ASSERT(options.id.has_value());
-            auto target = createTargetFromCreateOptions(options);
+            auto target = create_target_from_create_options(options);
 
             return create_replicated_log(std::move(target))
                 .thenValue([options = std::move(options), self = shared_from_this()](
@@ -381,17 +381,17 @@ namespace {
             -> futures::Future<replication::log::global_status> override {
             // 1. Determine which source to use for gathering information
             // 2. Query information from all sources
-            auto futureSpec = loadLogSpecification(vocbase.name(), id, source);
+            auto futureSpec = load_log_specification(vocbase.name(), id, source);
             return std::move(futureSpec)
                 .thenValue([self = shared_from_this(),
-                            source](ResultT<std::shared_ptr<replication::agency::LogPlanSpecification const>> result) {
+                            source](ResultT<std::shared_ptr<replication::agency::log_plan_specification const>> result) {
                     if (result.fail()) {
                         THROW_DBMS_EXCEPTION(result.result());
                     }
 
                     auto const &spec = result.get();
                     TRI_ASSERT(spec != nullptr);
-                    return self->collectglobal_statusUsingSpec(spec, source);
+                    return self->collect_global_status_using_spec(spec, source);
                 });
         }
 
@@ -401,7 +401,7 @@ namespace {
         }
 
         auto get_log_entry_by_index(log_id id, log_index index) const
-            -> futures::Future<std::optional<PersistingLogEntry>> override {
+            -> futures::Future<std::optional<persisting_log_entry>> override {
             auto path = basics::StringUtils::joinT("/", "_api/log", id, "entry", index.value);
             network::RequestOptions opts;
             opts.database = vocbase.name();
@@ -410,8 +410,8 @@ namespace {
                     if (resp.fail() || !fuerte::statusIsSuccess(resp.statusCode())) {
                         THROW_DBMS_EXCEPTION(resp.combinedResult());
                     }
-                    auto entry = PersistingLogEntry::from_velocy_pack(resp.slice().get("result"));
-                    return std::optional<PersistingLogEntry>(std::move(entry));
+                    auto entry = persisting_log_entry::from_velocy_pack(resp.slice().get("result"));
+                    return std::optional<persisting_log_entry>(std::move(entry));
                 });
         }
 
@@ -605,11 +605,11 @@ namespace {
             return *leader;
         }
 
-        auto loadLogSpecification(DatabaseID const &database, replication::log_id id,
+        auto load_log_specification(DatabaseID const &database, replication::log_id id,
                                   global_status::SpecificationSource source) const
-            -> futures::Future<ResultT<std::shared_ptr<nil::dbms::replication::agency::LogPlanSpecification const>>> {
+            -> futures::Future<ResultT<std::shared_ptr<nil::dbms::replication::agency::log_plan_specification const>>> {
             if (source == global_status::SpecificationSource::kLocalCache) {
-                return clusterInfo.getReplicatedLogPlanSpecification(database, id);
+                return clusterInfo.getReplicatedlog_plan_specification(database, id);
             } else {
                 AsyncAgencyComm ac;
                 auto f = ac.getValues(
@@ -618,7 +618,7 @@ namespace {
 
                 return std::move(f).then(
                     [self = shared_from_this(), id](futures::Try<AgencyReadResult> &&tryResult)
-                        -> ResultT<std::shared_ptr<nil::dbms::replication::agency::LogPlanSpecification const>> {
+                        -> ResultT<std::shared_ptr<nil::dbms::replication::agency::log_plan_specification const>> {
                         auto result = basics::catchToResultT([&] { return std::move(tryResult.get()); });
 
                         if (result.fail()) {
@@ -629,16 +629,16 @@ namespace {
                             return Result::fmt(TRI_ERROR_REPLICATION_REPLICATED_LOG_NOT_FOUND, id);
                         }
 
-                        auto spec = velocypack::deserialize<nil::dbms::replication::agency::LogPlanSpecification>(
+                        auto spec = velocypack::deserialize<nil::dbms::replication::agency::log_plan_specification>(
                             result->value());
 
                         return {
-                            std::make_shared<nil::dbms::replication::agency::LogPlanSpecification>(std::move(spec))};
+                            std::make_shared<nil::dbms::replication::agency::log_plan_specification>(std::move(spec))};
                     });
             }
         }
 
-        auto readSupervisionStatus(replication::log_id id) const -> futures::Future<global_status::SupervisionStatus> {
+        auto read_supervision_status(replication::log_id id) const -> futures::Future<global_status::SupervisionStatus> {
             AsyncAgencyComm ac;
             using Status = global_status::SupervisionStatus;
             // TODO move this into the agency methods
@@ -664,14 +664,14 @@ namespace {
                 auto status = statusFromResult(read.asResult());
                 if (read.ok() && !read.value().isNone()) {
                     status.response.emplace(
-                        velocypack::deserialize<nil::dbms::replication::agency::LogCurrentSupervision>(read.value()));
+                        velocypack::deserialize<nil::dbms::replication::agency::log_current_supervision>(read.value()));
                 }
 
                 return status;
             });
         }
 
-        auto queryParticipantsStatus(replication::log_id id, replication::ParticipantId const &participant) const
+        auto query_participants_status(replication::log_id id, replication::ParticipantId const &participant) const
             -> futures::Future<global_status::participant_status> {
             using Status = global_status::participant_status;
             auto path = basics::StringUtils::joinT("/", "_api/log", id, "local-status");
@@ -703,7 +703,7 @@ namespace {
                 });
         }
 
-        auto collectglobal_statusUsingSpec(std::shared_ptr<replication::agency::LogPlanSpecification const> spec,
+        auto collect_global_status_using_spec(std::shared_ptr<replication::agency::log_plan_specification const> spec,
                                           global_status::SpecificationSource source) const
             -> futures::Future<global_status> {
             // send of a request to all participants
@@ -713,11 +713,11 @@ namespace {
                 std::vector<futures::Future<global_status::participant_status>> pfs;
                 pfs.reserve(participants.size());
                 for (auto const &[id, flags] : participants) {
-                    pfs.emplace_back(queryParticipantsStatus(spec->id, id));
+                    pfs.emplace_back(query_participants_status(spec->id, id));
                 }
                 return futures::collectAll(pfs);
             });
-            auto af = readSupervisionStatus(spec->id);
+            auto af = read_supervision_status(spec->id);
             return futures::collect(std::move(af), std::move(psf)).thenValue([spec, source](auto &&pairResult) {
                 auto &[agency, participantResults] = pairResult;
 
@@ -747,9 +747,9 @@ namespace {
         network::ConnectionPool *pool;
     };
 
-    struct ReplicatedStateDBServerMethods : std::enable_shared_from_this<ReplicatedStateDBServerMethods>,
+    struct replicated_state_db_server_methods : std::enable_shared_from_this<replicated_state_db_server_methods>,
                                             replicated_state_methods {
-        explicit ReplicatedStateDBServerMethods(TRI_vocbase_t &vocbase) : vocbase(vocbase) {
+        explicit replicated_state_db_server_methods(TRI_vocbase_t &vocbase) : vocbase(vocbase) {
         }
 
         auto create_replicated_state(state::agency::Target spec) const -> futures::Future<Result> override {
@@ -760,7 +760,7 @@ namespace {
             THROW_DBMS_EXCEPTION(TRI_ERROR_HTTP_NOT_IMPLEMENTED);
         }
 
-        [[nodiscard]] auto waitForStateReady(log_id, std::uint64_t)
+        [[nodiscard]] auto wait_for_state_ready(log_id, std::uint64_t)
             -> futures::Future<ResultT<consensus::index_t>> override {
             THROW_DBMS_EXCEPTION(TRI_ERROR_NOT_IMPLEMENTED);
         }
@@ -773,7 +773,7 @@ namespace {
             THROW_DBMS_EXCEPTION(TRI_ERROR_HTTP_NOT_IMPLEMENTED);
         }
 
-        auto replaceParticipant(log_id log_id, ParticipantId const &participantToRemove,
+        auto replace_participant(log_id log_id, ParticipantId const &participantToRemove,
                                 ParticipantId const &participantToAdd,
                                 std::optional<ParticipantId> const &currentLeader) const
             -> futures::Future<Result> override {
@@ -781,7 +781,7 @@ namespace {
             THROW_DBMS_EXCEPTION(TRI_ERROR_HTTP_NOT_IMPLEMENTED);
         }
 
-        auto setLeader(log_id id, std::optional<ParticipantId> const &leaderId) const
+        auto set_leader(log_id id, std::optional<ParticipantId> const &leaderId) const
             -> futures::Future<Result> override {
             // Only available on the coordinator
             THROW_DBMS_EXCEPTION(TRI_ERROR_HTTP_NOT_IMPLEMENTED);
@@ -795,9 +795,9 @@ namespace {
         TRI_vocbase_t &vocbase;
     };
 
-    struct ReplicatedStateCoordinatorMethods : std::enable_shared_from_this<ReplicatedStateCoordinatorMethods>,
+    struct replicated_state_coordinator_methods : std::enable_shared_from_this<replicated_state_coordinator_methods>,
                                                replicated_state_methods {
-        explicit ReplicatedStateCoordinatorMethods(DbmsdServer &server, std::string databaseName) :
+        explicit replicated_state_coordinator_methods(DbmsdServer &server, std::string databaseName) :
             server(server), clusterFeature(server.getFeature<ClusterFeature>()),
             clusterInfo(clusterFeature.clusterInfo()), databaseName(std::move(databaseName)) {
         }
@@ -813,7 +813,7 @@ namespace {
                 });
         }
 
-        [[nodiscard]] virtual auto waitForStateReady(log_id id, std::uint64_t version)
+        [[nodiscard]] virtual auto wait_for_state_ready(log_id id, std::uint64_t version)
             -> futures::Future<ResultT<consensus::index_t>> override {
             struct Context {
                 explicit Context(uint64_t version) : version(version) {
@@ -869,7 +869,7 @@ namespace {
             THROW_DBMS_EXCEPTION(TRI_ERROR_NOT_IMPLEMENTED);
         }
 
-        auto replaceParticipant(log_id id, ParticipantId const &participantToRemove,
+        auto replace_participant(log_id id, ParticipantId const &participantToRemove,
                                 ParticipantId const &participantToAdd,
                                 std::optional<ParticipantId> const &currentLeader) const
             -> futures::Future<Result> override {
@@ -877,7 +877,7 @@ namespace {
                 databaseName, id, participantToRemove, participantToAdd, currentLeader);
         }
 
-        auto setLeader(log_id id, std::optional<ParticipantId> const &leaderId) const
+        auto set_leader(log_id id, std::optional<ParticipantId> const &leaderId) const
             -> futures::Future<Result> override {
             return replication::agency::methods::replace_replicated_set_leader(databaseName, id, leaderId);
         }
@@ -921,7 +921,7 @@ auto replicated_log_methods::create_instance(TRI_vocbase_t &vocbase) -> std::sha
         case ServerState::ROLE_COORDINATOR:
             return std::make_shared<replicated_log_methodsCoordinator>(vocbase);
         case ServerState::ROLE_DBSERVER:
-            return std::make_shared<replicated_log_methodsDBServer>(vocbase);
+            return std::make_shared<replicated_log_methods_db_server>(vocbase);
         default:
             THROW_DBMS_EXCEPTION_MESSAGE(TRI_ERROR_NOT_IMPLEMENTED, "api only on available coordinators or dbservers");
     }
@@ -940,11 +940,11 @@ auto replicated_state_methods::create_instance(TRI_vocbase_t &vocbase) -> std::s
 
 auto replicated_state_methods::create_instanceDBServer(TRI_vocbase_t &vocbase) -> std::shared_ptr<replicated_state_methods> {
     ADB_PROD_ASSERT(ServerState::instance()->getRole() == ServerState::ROLE_DBSERVER);
-    return std::make_shared<ReplicatedStateDBServerMethods>(vocbase);
+    return std::make_shared<replicated_state_db_server_methods>(vocbase);
 }
 
 auto replicated_state_methods::create_instanceCoordinator(DbmsdServer &server, std::string databaseName)
     -> std::shared_ptr<replicated_state_methods> {
     ADB_PROD_ASSERT(ServerState::instance()->getRole() == ServerState::ROLE_COORDINATOR);
-    return std::make_shared<ReplicatedStateCoordinatorMethods>(server, std::move(databaseName));
+    return std::make_shared<replicated_state_coordinator_methods>(server, std::move(databaseName));
 }

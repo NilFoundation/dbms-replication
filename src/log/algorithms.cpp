@@ -51,7 +51,7 @@ auto algorithms::to_string(ConflictReason r) noexcept -> std::string_view {
     FATAL_ERROR_ABORT();
 }
 
-auto algorithms::detectConflict(log::InMemoryLog const &log, term_index_pair prevLog) noexcept
+auto algorithms::detectConflict(log::in_memory_log const &log, term_index_pair prevLog) noexcept
     -> std::optional<std::pair<ConflictReason, term_index_pair>> {
     /*
      * There are three situations to handle here:
@@ -95,7 +95,7 @@ auto algorithms::detectConflict(log::InMemoryLog const &log, term_index_pair pre
 }
 
 auto algorithms::update_log(log_action_context &ctx, ServerID const &myServerId, RebootId myRebootId,
-                                     log_id log_id, agency::LogPlanSpecification const *spec,
+                                     log_id log_id, agency::log_plan_specification const *spec,
                                      std::shared_ptr<cluster::IFailureOracle const> failureOracle) noexcept
     -> futures::Future<nil::dbms::Result> {
     auto result = basics::catchToResultT([&]() -> futures::Future<nil::dbms::Result> {

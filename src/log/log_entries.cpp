@@ -57,47 +57,47 @@ auto log_payload::slice() const noexcept -> velocypack::Slice {
     return VPackSlice(buffer.data());
 }
 
-PersistingLogEntry::PersistingLogEntry(term_index_pair term_index_pair, std::variant<LogMetaPayload, log_payload> payload) :
+persisting_log_entry::persisting_log_entry(term_index_pair term_index_pair, std::variant<log_meta_payload, log_payload> payload) :
     _termIndex(term_index_pair), _payload(std::move(payload)) {
 }
 
-auto PersistingLogEntry::log_term() const noexcept -> log_term {
+auto persisting_log_entry::log_term() const noexcept -> log_term {
     return _termIndex.term;
 }
 
-auto PersistingLogEntry::log_index() const noexcept -> log_index {
+auto persisting_log_entry::log_index() const noexcept -> log_index {
     return _termIndex.index;
 }
 
-auto PersistingLogEntry::log_payload() const noexcept -> log_payload const * {
+auto persisting_log_entry::log_payload() const noexcept -> log_payload const * {
     return std::get_if<log_payload>(&_payload);
 }
 
-void PersistingLogEntry::to_velocy_pack(velocypack::Builder &builder) const {
+void persisting_log_entry::to_velocy_pack(velocypack::Builder &builder) const {
     builder.openObject();
     builder.add("log_index", velocypack::Value(_termIndex.index.value));
-    entriesWithoutIndexto_velocy_pack(builder);
+    entries_without_index_to_velocy_pack(builder);
     builder.close();
 }
 
-void PersistingLogEntry::to_velocy_pack(velocypack::Builder &builder, PersistingLogEntry::Omitlog_index) const {
+void persisting_log_entry::to_velocy_pack(velocypack::Builder &builder, persisting_log_entry::Omitlog_index) const {
     builder.openObject();
-    entriesWithoutIndexto_velocy_pack(builder);
+    entries_without_index_to_velocy_pack(builder);
     builder.close();
 }
 
-void PersistingLogEntry::entriesWithoutIndexto_velocy_pack(velocypack::Builder &builder) const {
+void persisting_log_entry::entries_without_index_to_velocy_pack(velocypack::Builder &builder) const {
     builder.add("log_term", velocypack::Value(_termIndex.term.value));
     if (std::holds_alternative<log_payload>(_payload)) {
         builder.add("payload", std::get<log_payload>(_payload).slice());
     } else {
-        TRI_ASSERT(std::holds_alternative<LogMetaPayload>(_payload));
+        TRI_ASSERT(std::holds_alternative<log_meta_payload>(_payload));
         builder.add(velocypack::Value("meta"));
-        std::get<LogMetaPayload>(_payload).to_velocy_pack(builder);
+        std::get<log_meta_payload>(_payload).to_velocy_pack(builder);
     }
 }
 
-auto PersistingLogEntry::from_velocy_pack(velocypack::Slice slice) -> PersistingLogEntry {
+auto persisting_log_entry::from_velocy_pack(velocypack::Slice slice) -> persisting_log_entry {
     auto const log_term = slice.get("log_term").extract<log_term>();
     auto const log_index = slice.get("log_index").extract<log_index>();
     auto const termIndex = term_index_pair {log_term, log_index};
@@ -107,15 +107,15 @@ auto PersistingLogEntry::from_velocy_pack(velocypack::Slice slice) -> Persisting
     } else {
         auto meta = slice.get("meta");
         TRI_ASSERT(!meta.isNone());
-        return {termIndex, LogMetaPayload::from_velocy_pack(meta)};
+        return {termIndex, log_meta_payload::from_velocy_pack(meta)};
     }
 }
 
-auto PersistingLogEntry::log_term_index_pair() const noexcept -> term_index_pair {
+auto persisting_log_entry::log_term_index_pair() const noexcept -> term_index_pair {
     return _termIndex;
 }
 
-auto PersistingLogEntry::approxbyte_size() const noexcept -> std::size_t {
+auto persisting_log_entry::approxbyte_size() const noexcept -> std::size_t {
     auto size = approxMetaDataSize;
 
     if (std::holds_alternative<log_payload>(_payload)) {
@@ -125,7 +125,7 @@ auto PersistingLogEntry::approxbyte_size() const noexcept -> std::size_t {
     return size;
 }
 
-PersistingLogEntry::PersistingLogEntry(log_index index, velocypack::Slice persisted) {
+persisting_log_entry::persisting_log_entry(log_index index, velocypack::Slice persisted) {
     _termIndex.index = index;
     _termIndex.term = persisted.get("log_term").extract<log_term>();
     if (auto payload = persisted.get("payload"); !payload.isNone()) {
@@ -133,34 +133,34 @@ PersistingLogEntry::PersistingLogEntry(log_index index, velocypack::Slice persis
     } else {
         auto meta = persisted.get("meta");
         TRI_ASSERT(!meta.isNone());
-        _payload = LogMetaPayload::from_velocy_pack(meta);
+        _payload = log_meta_payload::from_velocy_pack(meta);
     }
 }
 
-auto PersistingLogEntry::hasPayload() const noexcept -> bool {
+auto persisting_log_entry::hasPayload() const noexcept -> bool {
     return std::holds_alternative<log_payload>(_payload);
 }
-auto PersistingLogEntry::hasMeta() const noexcept -> bool {
-    return std::holds_alternative<LogMetaPayload>(_payload);
+auto persisting_log_entry::hasMeta() const noexcept -> bool {
+    return std::holds_alternative<log_meta_payload>(_payload);
 }
 
-auto PersistingLogEntry::meta() const noexcept -> const LogMetaPayload * {
-    return std::get_if<LogMetaPayload>(&_payload);
+auto persisting_log_entry::meta() const noexcept -> const log_meta_payload * {
+    return std::get_if<log_meta_payload>(&_payload);
 }
 
-InMemoryLogEntry::InMemoryLogEntry(PersistingLogEntry entry, bool waitForSync) :
+in_memory_logEntry::in_memory_logEntry(persisting_log_entry entry, bool waitForSync) :
     _waitForSync(waitForSync), _logEntry(std::move(entry)) {
 }
 
-void InMemoryLogEntry::setInsertTp(clock::time_point tp) noexcept {
+void in_memory_logEntry::setInsertTp(clock::time_point tp) noexcept {
     _insertTp = tp;
 }
 
-auto InMemoryLogEntry::insertTp() const noexcept -> clock::time_point {
+auto in_memory_logEntry::insertTp() const noexcept -> clock::time_point {
     return _insertTp;
 }
 
-auto InMemoryLogEntry::entry() const noexcept -> PersistingLogEntry const & {
+auto in_memory_logEntry::entry() const noexcept -> persisting_log_entry const & {
     // Note that while get() isn't marked as noexcept, it actually is.
     return _logEntry.get();
 }
@@ -196,26 +196,26 @@ auto LogEntryView::clonePayload() const -> log_payload {
 
 namespace {
     constexpr std::string_view StringFirstIndexOfTerm = "FirstIndexOfTerm";
-    constexpr std::string_view StringUpdateparticipants_config = "Updateparticipants_config";
+    constexpr std::string_view Stringupdate_participants_config = "update_participants_config";
 }    // namespace
 
-auto LogMetaPayload::from_velocy_pack(velocypack::Slice s) -> LogMetaPayload {
+auto log_meta_payload::from_velocy_pack(velocypack::Slice s) -> log_meta_payload {
     auto typeSlice = s.get(StaticStrings::IndexType);
     if (typeSlice.toString() == StringFirstIndexOfTerm) {
         return {FirstEntryOfTerm::from_velocy_pack(s)};
-    } else if (typeSlice.toString() == StringUpdateparticipants_config) {
-        return {Updateparticipants_config::from_velocy_pack(s)};
+    } else if (typeSlice.toString() == Stringupdate_participants_config) {
+        return {update_participants_config::from_velocy_pack(s)};
     } else {
         TRI_ASSERT(false);
         THROW_DBMS_EXCEPTION(TRI_ERROR_BAD_PARAMETER);
     }
 }
 
-void LogMetaPayload::to_velocy_pack(velocypack::Builder &builder) const {
+void log_meta_payload::to_velocy_pack(velocypack::Builder &builder) const {
     std::visit([&](auto const &v) { v.to_velocy_pack(builder); }, info);
 }
 
-void LogMetaPayload::FirstEntryOfTerm::to_velocy_pack(velocypack::Builder &b) const {
+void log_meta_payload::FirstEntryOfTerm::to_velocy_pack(velocypack::Builder &b) const {
     velocypack::ObjectBuilder ob(&b);
     b.add(StaticStrings::IndexType, velocypack::Value(StringFirstIndexOfTerm));
     b.add(StaticStrings::Leader, velocypack::Value(leader));
@@ -223,30 +223,30 @@ void LogMetaPayload::FirstEntryOfTerm::to_velocy_pack(velocypack::Builder &b) co
     velocypack::serialize(b, participants);
 }
 
-void LogMetaPayload::Updateparticipants_config::to_velocy_pack(velocypack::Builder &b) const {
+void log_meta_payload::update_participants_config::to_velocy_pack(velocypack::Builder &b) const {
     velocypack::ObjectBuilder ob(&b);
-    b.add(StaticStrings::IndexType, velocypack::Value(StringUpdateparticipants_config));
+    b.add(StaticStrings::IndexType, velocypack::Value(Stringupdate_participants_config));
     b.add(velocypack::Value(StaticStrings::Participants));
     velocypack::serialize(b, participants);
 }
 
-auto LogMetaPayload::Updateparticipants_config::from_velocy_pack(velocypack::Slice s) -> Updateparticipants_config {
-    TRI_ASSERT(s.get(StaticStrings::IndexType).toString() == StringUpdateparticipants_config);
+auto log_meta_payload::update_participants_config::from_velocy_pack(velocypack::Slice s) -> update_participants_config {
+    TRI_ASSERT(s.get(StaticStrings::IndexType).toString() == Stringupdate_participants_config);
     auto participants = velocypack::deserialize<agency::participants_config>(s.get(StaticStrings::Participants));
-    return Updateparticipants_config {std::move(participants)};
+    return update_participants_config {std::move(participants)};
 }
 
-auto LogMetaPayload::FirstEntryOfTerm::from_velocy_pack(velocypack::Slice s) -> FirstEntryOfTerm {
+auto log_meta_payload::FirstEntryOfTerm::from_velocy_pack(velocypack::Slice s) -> FirstEntryOfTerm {
     TRI_ASSERT(s.get(StaticStrings::IndexType).toString() == StringFirstIndexOfTerm);
     auto leader = s.get(StaticStrings::Leader).copyString();
     auto participants = velocypack::deserialize<agency::participants_config>(s.get(StaticStrings::Participants));
     return FirstEntryOfTerm {std::move(leader), std::move(participants)};
 }
 
-auto LogMetaPayload::withFirstEntryOfTerm(ParticipantId leader, agency::participants_config config) -> LogMetaPayload {
-    return LogMetaPayload {FirstEntryOfTerm {.leader = std::move(leader), .participants = std::move(config)}};
+auto log_meta_payload::with_first_entry_of_term(ParticipantId leader, agency::participants_config config) -> log_meta_payload {
+    return log_meta_payload {FirstEntryOfTerm {.leader = std::move(leader), .participants = std::move(config)}};
 }
 
-auto LogMetaPayload::withUpdateparticipants_config(agency::participants_config config) -> LogMetaPayload {
-    return LogMetaPayload {Updateparticipants_config {.participants = std::move(config)}};
+auto log_meta_payload::with_update_participants_config(agency::participants_config config) -> log_meta_payload {
+    return log_meta_payload {update_participants_config {.participants = std::move(config)}};
 }

@@ -87,7 +87,7 @@ namespace nil::dbms::replication {
         virtual auto get_status(log_id) const -> futures::Future<Genericlog_status> = 0;
 
         virtual auto get_log_entry_by_index(log_id, log_index) const
-            -> futures::Future<std::optional<PersistingLogEntry>> = 0;
+            -> futures::Future<std::optional<persisting_log_entry>> = 0;
 
         virtual auto slice(log_id, log_index start, log_index stop) const
             -> futures::Future<std::unique_ptr<persisted_logIterator>> = 0;
@@ -135,7 +135,7 @@ namespace nil::dbms::replication {
     struct replicated_state_methods {
         virtual ~replicated_state_methods() = default;
 
-        [[nodiscard]] virtual auto waitForStateReady(log_id, std::uint64_t version)
+        [[nodiscard]] virtual auto wait_for_state_ready(log_id, std::uint64_t version)
             -> futures::Future<ResultT<consensus::index_t>> = 0;
 
         virtual auto create_replicated_state(state::agency::Target spec) const -> futures::Future<Result> = 0;
@@ -159,12 +159,12 @@ namespace nil::dbms::replication {
         static auto create_instanceCoordinator(DbmsdServer &server, std::string databaseName)
             -> std::shared_ptr<replicated_state_methods>;
 
-        [[nodiscard]] virtual auto replaceParticipant(log_id, ParticipantId const &participantToRemove,
+        [[nodiscard]] virtual auto replace_participant(log_id, ParticipantId const &participantToRemove,
                                                       ParticipantId const &participantToAdd,
                                                       std::optional<ParticipantId> const &currentLeader) const
             -> futures::Future<Result> = 0;
 
-        [[nodiscard]] virtual auto setLeader(log_id id, std::optional<ParticipantId> const &leaderId) const
+        [[nodiscard]] virtual auto set_leader(log_id id, std::optional<ParticipantId> const &leaderId) const
             -> futures::Future<Result> = 0;
     };
 

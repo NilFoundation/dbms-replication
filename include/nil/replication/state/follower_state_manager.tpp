@@ -33,7 +33,7 @@ namespace nil::dbms::replication::state {
         LOG_CTX("3678e", TRACE, loggerContext) << "apply entries in range " << range;
 
         auto state = _guarded_data.doUnderLock([&](guarded_data &data) {
-            data.updateInternalState(FollowerInternalState::kApplyRecentEntries, range);
+            data.updateInternalState(follower_internal_state::kApplyRecentEntries, range);
             return data.state;
         });
 
@@ -84,7 +84,7 @@ namespace nil::dbms::replication::state {
             TRI_ASSERT(data.stream != nullptr);
             LOG_CTX("a1462", TRACE, loggerContext)
                 << "polling for new entries _nextWaitForIndex = " << data._nextWaitForIndex;
-            data.updateInternalState(FollowerInternalState::kNothingToApply);
+            data.updateInternalState(follower_internal_state::kNothingToApply);
             return std::make_tuple(std::move(result), data.stream->waitForIterator(data._nextWaitForIndex));
         });
     }
@@ -162,7 +162,7 @@ namespace nil::dbms::replication::state {
                     << "failed to transfer snapshot: " << result.errorMessage() << " - retry scheduled";
 
                 auto retryCount = self->_guarded_data.doUnderLock([&](guarded_data &data) {
-                    data.updateInternalState(FollowerInternalState::kSnapshotTransferFailed, result);
+                    data.updateInternalState(follower_internal_state::kSnapshotTransferFailed, result);
                     return data.errorCounter;
                 });
 
@@ -238,7 +238,7 @@ namespace nil::dbms::replication::state {
     template<typename S>
     void FollowerStateManager<S>::ingestLogData() {
         auto core = _guarded_data.doUnderLock([&](guarded_data &data) {
-            data.updateInternalState(FollowerInternalState::kTransferSnapshot);
+            data.updateInternalState(follower_internal_state::kTransferSnapshot);
             auto demux = Demultiplexer::construct(logFollower);
             demux->listen();
             data.stream = demux->template getStreamById<1>();
@@ -254,7 +254,7 @@ namespace nil::dbms::replication::state {
 
     template<typename S>
     void FollowerStateManager<S>::awaitLeaderShip() {
-        _guarded_data.getLockedGuard()->updateInternalState(FollowerInternalState::kWaitForLeaderConfirmation);
+        _guarded_data.getLockedGuard()->updateInternalState(follower_internal_state::kWaitForLeaderConfirmation);
         try {
             handleAwaitLeadershipResult(logFollower->waitForLeaderAcked());
         } catch (log::participant_resigned_exception const &) {
@@ -318,7 +318,7 @@ namespace nil::dbms::replication::state {
 
     template<typename S>
     FollowerStateManager<S>::FollowerStateManager(logger_context loggerContext,
-                                                  std::shared_ptr<ReplicatedStateBase>
+                                                  std::shared_ptr<replicated_state_base>
                                                       parent,
                                                   std::shared_ptr<log::ILogFollower>
                                                       logFollower,
@@ -402,7 +402,7 @@ namespace nil::dbms::replication::state {
     }
 
     template<typename S>
-    void FollowerStateManager<S>::guarded_data::updateInternalState(FollowerInternalState newState,
+    void FollowerStateManager<S>::guarded_data::updateInternalState(follower_internal_state newState,
                                                                    std::optional<log_range>
                                                                        range) {
         internalState = newState;
@@ -413,7 +413,7 @@ namespace nil::dbms::replication::state {
     }
 
     template<typename S>
-    void FollowerStateManager<S>::guarded_data::updateInternalState(FollowerInternalState newState, Result error) {
+    void FollowerStateManager<S>::guarded_data::updateInternalState(follower_internal_state newState, Result error) {
         internalState = newState;
         lastInternalStateChange = std::chrono::system_clock::now();
         ingestionRange.reset();

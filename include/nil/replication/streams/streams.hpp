@@ -54,7 +54,7 @@ namespace nil::dbms::replication::streams {
         struct wait_for_result { };
         virtual auto waitFor(log_index) -> futures::Future<wait_for_result> = 0;
 
-        using Iterator = Typedlog_rangeIterator<StreamEntryView<T>>;
+        using Iterator = typed_log_range_iterator<StreamEntryView<T>>;
         virtual auto waitForIterator(log_index) -> futures::Future<std::unique_ptr<Iterator>> = 0;
 
         virtual auto release(log_index) -> void = 0;

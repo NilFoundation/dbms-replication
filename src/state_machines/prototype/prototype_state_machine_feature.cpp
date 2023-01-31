@@ -143,9 +143,9 @@ prototype_state_machine_feature::prototype_state_machine_feature(Server &server)
     startsAfter<EngineSelectorFeature>();
     startsAfter<NetworkFeature>();
     startsAfter<RocksDBEngine>();
-    startsAfter<ReplicatedStateAppFeature>();
+    startsAfter<replicated_state_app_feature>();
     onlyEnabledWith<EngineSelectorFeature>();
-    onlyEnabledWith<ReplicatedStateAppFeature>();
+    onlyEnabledWith<replicated_state_app_feature>();
 }
 
 void prototype_state_machine_feature::prepare() {
@@ -154,7 +154,7 @@ void prototype_state_machine_feature::prepare() {
 }
 
 void prototype_state_machine_feature::start() {
-    auto &replicatedStateFeature = server().getFeature<ReplicatedStateAppFeature>();
+    auto &replicatedStateFeature = server().getFeature<replicated_state_app_feature>();
     auto &networkFeature = server().getFeature<NetworkFeature>();
     auto &engine = server().getFeature<EngineSelectorFeature>().engine<RocksDBEngine>();
 

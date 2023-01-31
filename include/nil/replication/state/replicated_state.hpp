@@ -55,27 +55,27 @@ namespace nil::dbms::replication {
         /**
          * Common base class for all ReplicatedStates, hiding the type information.
          */
-        struct ReplicatedStateBase {
-            virtual ~ReplicatedStateBase() = default;
+        struct replicated_state_base {
+            virtual ~replicated_state_base() = default;
 
             virtual void flush(StateGeneration plannedGeneration) = 0;
             virtual void start(std::unique_ptr<ReplicatedStateToken> token) = 0;
             virtual void forceRebuild() = 0;
             [[nodiscard]] virtual auto get_status() -> std::optional<StateStatus> = 0;
             [[nodiscard]] auto getLeader() -> std::shared_ptr<IReplicatedLeaderStateBase> {
-                return getLeaderBase();
+                return get_leader_base();
             }
             [[nodiscard]] auto getFollower() -> std::shared_ptr<IReplicatedFollowerStateBase> {
-                return getFollowerBase();
+                return get_follower_base();
             }
 
         private:
-            [[nodiscard]] virtual auto getLeaderBase() -> std::shared_ptr<IReplicatedLeaderStateBase> = 0;
-            [[nodiscard]] virtual auto getFollowerBase() -> std::shared_ptr<IReplicatedFollowerStateBase> = 0;
+            [[nodiscard]] virtual auto get_leader_base() -> std::shared_ptr<IReplicatedLeaderStateBase> = 0;
+            [[nodiscard]] virtual auto get_follower_base() -> std::shared_ptr<IReplicatedFollowerStateBase> = 0;
         };
 
         template<typename S>
-        struct ReplicatedState final : ReplicatedStateBase, std::enable_shared_from_this<ReplicatedState<S>> {
+        struct ReplicatedState final : replicated_state_base, std::enable_shared_from_this<ReplicatedState<S>> {
             using Factory = typename ReplicatedStateTraits<S>::FactoryType;
             using EntryType = typename ReplicatedStateTraits<S>::EntryType;
             using FollowerType = typename ReplicatedStateTraits<S>::FollowerType;
@@ -124,10 +124,10 @@ namespace nil::dbms::replication {
             };
 
         private:
-            auto getLeaderBase() -> std::shared_ptr<IReplicatedLeaderStateBase> final {
+            auto get_leader_base() -> std::shared_ptr<IReplicatedLeaderStateBase> final {
                 return getLeader();
             }
-            auto getFollowerBase() -> std::shared_ptr<IReplicatedFollowerStateBase> final {
+            auto get_follower_base() -> std::shared_ptr<IReplicatedFollowerStateBase> final {
                 return getFollower();
             }
 

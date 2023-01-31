@@ -43,7 +43,7 @@ namespace nil::dbms::replication::state {
         inline constexpr auto StringFollower = std::string_view {"follower"};
     }    // namespace static_strings
 
-    enum class LeaderInternalState {
+    enum class leader_internal_state {
         kUninitializedState,
         kWaitingForLeadershipEstablished,
         kIngestingExistingLog,
@@ -51,18 +51,18 @@ namespace nil::dbms::replication::state {
         kServiceAvailable,
     };
 
-    auto to_string(LeaderInternalState) noexcept -> std::string_view;
-    struct LeaderInternalStateStringTransformer {
+    auto to_string(leader_internal_state) noexcept -> std::string_view;
+    struct leader_internal_stateStringTransformer {
         using SerializedType = std::string;
-        auto toSerialized(LeaderInternalState source, std::string &target) const -> inspection::Status;
-        auto fromSerialized(std::string const &source, LeaderInternalState &target) const -> inspection::Status;
+        auto toSerialized(leader_internal_state source, std::string &target) const -> inspection::Status;
+        auto fromSerialized(std::string const &source, leader_internal_state &target) const -> inspection::Status;
     };
 
     struct LeaderStatus {
         using clock = std::chrono::system_clock;
 
         struct ManagerState {
-            LeaderInternalState state {};
+            leader_internal_state state {};
             clock::time_point lastChange {};
             std::optional<std::string> detail;
         };
@@ -84,12 +84,12 @@ namespace nil::dbms::replication::state {
     template<class Inspector>
     auto inspect(Inspector &f, LeaderStatus::ManagerState &x) {
         return f.object(x).fields(
-            f.field(static_strings::StringManagerState, x.state).transformWith(LeaderInternalStateStringTransformer {}),
+            f.field(static_strings::StringManagerState, x.state).transformWith(leader_internal_stateStringTransformer {}),
             f.field(static_strings::StringLastChange, x.lastChange).transformWith(inspection::TimeStampTransformer {}),
             f.field(static_strings::StringDetail, x.detail));
     }
 
-    enum class FollowerInternalState {
+    enum class follower_internal_state {
         kUninitializedState,
         kWaitForLeaderConfirmation,
         kTransferSnapshot,
@@ -98,18 +98,18 @@ namespace nil::dbms::replication::state {
         kSnapshotTransferFailed,
     };
 
-    auto to_string(FollowerInternalState) noexcept -> std::string_view;
-    struct FollowerInternalStateStringTransformer {
+    auto to_string(follower_internal_state) noexcept -> std::string_view;
+    struct follower_internal_stateStringTransformer {
         using SerializedType = std::string;
-        auto toSerialized(FollowerInternalState source, std::string &target) const -> inspection::Status;
-        auto fromSerialized(std::string const &source, FollowerInternalState &target) const -> inspection::Status;
+        auto toSerialized(follower_internal_state source, std::string &target) const -> inspection::Status;
+        auto fromSerialized(std::string const &source, follower_internal_state &target) const -> inspection::Status;
     };
 
     struct FollowerStatus {
         using clock = std::chrono::system_clock;
 
         struct ManagerState {
-            FollowerInternalState state {};
+            follower_internal_state state {};
             clock::time_point lastChange {};
             std::optional<std::string> detail;
         };
@@ -132,7 +132,7 @@ namespace nil::dbms::replication::state {
     auto inspect(Inspector &f, FollowerStatus::ManagerState &x) {
         return f.object(x).fields(
             f.field(static_strings::StringManagerState, x.state)
-                .transformWith(FollowerInternalStateStringTransformer {}),
+                .transformWith(follower_internal_stateStringTransformer {}),
             f.field(static_strings::StringLastChange, x.lastChange).transformWith(inspection::TimeStampTransformer {}),
             f.field(static_strings::StringDetail, x.detail));
     }

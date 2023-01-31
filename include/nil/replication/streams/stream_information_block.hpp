@@ -45,7 +45,7 @@ namespace nil::dbms::replication::streams {
     struct StreamInformationBlock<stream_descriptor<Id, Type, Tags>> {
         using StreamType = streams::Stream<Type>;
         using EntryType = StreamEntry<Type>;
-        using Iterator = Typedlog_rangeIterator<StreamEntryView<Type>>;
+        using Iterator = typed_log_range_iterator<StreamEntryView<Type>>;
 
         using ContainerType = ::immer::flex_vector<EntryType, nil::dbms::immer::dbms_memory_policy>;
         using TransientType = typename ContainerType::transient_type;

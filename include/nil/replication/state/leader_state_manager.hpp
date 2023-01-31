@@ -66,7 +66,7 @@ namespace nil::dbms::replication::state {
 
         struct guarded_data {
             explicit guarded_data(LeaderStateManager &self,
-                                 LeaderInternalState internalState,
+                                 leader_internal_state internalState,
                                  std::unique_ptr<CoreType>
                                      core,
                                  std::unique_ptr<ReplicatedStateToken>
@@ -75,7 +75,7 @@ namespace nil::dbms::replication::state {
             std::shared_ptr<IReplicatedLeaderState<S>> state;
             std::shared_ptr<Stream> stream;
 
-            LeaderInternalState internalState {LeaderInternalState::kUninitializedState};
+            leader_internal_state internalState {leader_internal_state::kUninitializedState};
             std::chrono::system_clock::time_point lastInternalStateChange;
             std::optional<log_range> recoveryRange;
 
@@ -83,7 +83,7 @@ namespace nil::dbms::replication::state {
             std::unique_ptr<ReplicatedStateToken> token;
             bool _didResign = false;
 
-            void updateInternalState(LeaderInternalState newState, std::optional<log_range> range = std::nullopt) {
+            void updateInternalState(leader_internal_state newState, std::optional<log_range> range = std::nullopt) {
                 internalState = newState;
                 lastInternalStateChange = std::chrono::system_clock::now();
                 recoveryRange = range;
@@ -101,7 +101,7 @@ namespace nil::dbms::replication::state {
     };
 
     template<typename S>
-    LeaderStateManager<S>::guarded_data::guarded_data(LeaderStateManager &self, LeaderInternalState internalState,
+    LeaderStateManager<S>::guarded_data::guarded_data(LeaderStateManager &self, leader_internal_state internalState,
                                                     std::unique_ptr<CoreType> core,
                                                     std::unique_ptr<ReplicatedStateToken> token) :
         self(self),

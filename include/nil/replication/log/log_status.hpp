@@ -229,7 +229,7 @@ namespace nil::dbms::replication::log {
 
         struct SupervisionStatus {
             global_status_connection connection;
-            std::optional<agency::LogCurrentSupervision> response;
+            std::optional<agency::log_current_supervision> response;
 
             void to_velocy_pack(velocypack::Builder &) const;
             static auto from_velocy_pack(velocypack::Slice) -> SupervisionStatus;
@@ -237,7 +237,7 @@ namespace nil::dbms::replication::log {
 
         struct Specification {
             SpecificationSource source {SpecificationSource::kLocalCache};
-            agency::LogPlanSpecification plan;
+            agency::log_plan_specification plan;
 
             void to_velocy_pack(velocypack::Builder &) const;
             static auto from_velocy_pack(velocypack::Slice) -> Specification;
