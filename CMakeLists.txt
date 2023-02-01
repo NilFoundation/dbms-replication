@@ -66,9 +66,6 @@ target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTER
                            ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
-#                      ${CMAKE_WORKSPACE_NAME::cluster
-#                      ${CMAKE_WORKSPACE_NAME::velocypack
-#                      ${CMAKE_WORKSPACE_NAME::agency
                       ${Boost_LIBRARIES})
 
 cm_deploy(TARGETS ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
