@@ -15,24 +15,24 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include <nil/dbms/replication/state_machines/prototype/prototype_leader_state.hpp>
-#include <nil/dbms/replication/state_machines/prototype/prototype_state_machine.hpp>
-#include <nil/dbms/replication/state_machines/prototype/prototype_follower_state.hpp>
+#include <nil/replication_sdk/state_machines/prototype/prototype_leader_state.hpp>
+#include <nil/replication_sdk/state_machines/prototype/prototype_state_machine.hpp>
+#include <nil/replication_sdk/state_machines/prototype/prototype_follower_state.hpp>
 
 #include "logger/LogContextKeys.h"
 
 using namespace nil::dbms;
-using namespace nil::dbms::replication;
-using namespace nil::dbms::replication::state;
-using namespace nil::dbms::replication::state::prototype;
+using namespace nil::dbms::replication_sdk;
+using namespace nil::dbms::replication_sdk::replicated_state;
+using namespace nil::dbms::replication_sdk::replicated_state::prototype;
 
 prototype_leader_state::prototype_leader_state(std::unique_ptr<prototype_core> core) :
     loggerContext(core->loggerContext.with<logContextKeyStateComponent>("LeaderState")),
-    _guarded_data(*this, std::move(core)) {
+    _guardedData(*this, std::move(core)) {
 }
 
 auto prototype_leader_state::resign() &&noexcept -> std::unique_ptr<prototype_core> {
-    return _guarded_data.doUnderLock([](auto &data) {
+    return _guardedData.doUnderLock([](auto &data) {
         if (data.didResign()) {
             THROW_DBMS_EXCEPTION(TRI_ERROR_CLUSTER_NOT_LEADER);
         }
@@ -40,8 +40,8 @@ auto prototype_leader_state::resign() &&noexcept -> std::unique_ptr<prototype_co
     });
 }
 
-auto prototype_leader_state::recover_entries(std::unique_ptr<EntryIterator> ptr) -> futures::Future<Result> {
-    auto [result, action] = _guarded_data.doUnderLock(
+auto prototype_leader_state::recoverEntries(std::unique_ptr<EntryIterator> ptr) -> futures::Future<Result> {
+    auto [result, action] = _guardedData.doUnderLock(
         [self = shared_from_this(), ptr = std::move(ptr)](auto &data) mutable -> std::pair<Result, deferred_action> {
             if (data.didResign()) {
                 return {Result {TRI_ERROR_CLUSTER_NOT_LEADER}, deferred_action {}};
@@ -53,14 +53,14 @@ auto prototype_leader_state::recover_entries(std::unique_ptr<EntryIterator> ptr)
 }
 
 auto prototype_leader_state::set(std::unordered_map<std::string, std::string> entries,
-                               prototype_state_methods::PrototypeWriteOptions options) -> futures::Future<log_index> {
-    return execute_op(prototype_log_entry::create_insert(std::move(entries)), options);
+                                 prototype_state_methods::prototype_write_options options) -> futures::Future<log_index> {
+    return executeOp(prototype_log_entry::create_insert(std::move(entries)), options);
 }
 
-auto prototype_leader_state::compare_exchange(std::string key, std::string oldValue, std::string newValue,
-                                           prototype_state_methods::PrototypeWriteOptions options)
+auto prototype_leader_state::compareExchange(std::string key, std::string oldValue, std::string newValue,
+                                             prototype_state_methods::prototype_write_options options)
     -> futures::Future<ResultT<log_index>> {
-    auto [f, da] = _guarded_data.doUnderLock(
+    auto [f, da] = _guardedData.doUnderLock(
         [this, options, key = std::move(key), oldValue = std::move(oldValue), newValue = std::move(newValue)](
             auto &data) mutable -> std::pair<futures::Future<ResultT<log_index>>, deferred_action> {
             if (data.didResign()) {
@@ -72,12 +72,12 @@ auto prototype_leader_state::compare_exchange(std::string key, std::string oldVa
             }
 
             auto entry =
-                prototype_log_entry::createcompare_exchange(std::move(key), std::move(oldValue), std::move(newValue));
-            auto [idx, action] = getStream()->insertDeferred(entry);
-            data.core->apply_toOngoing_state(idx, entry);
+                prototype_log_entry::create_compare_exchange(std::move(key), std::move(oldValue), std::move(newValue));
+            auto [idx, action] = getStream()->insert_deferred(entry);
+            data.core->applyToOngoingState(idx, entry);
 
-            if (options.wait_for_applied) {
-                return std::make_pair(std::move(data.wait_for_applied(idx)).thenValue([idx = idx](auto &&) {
+            if (options.waitForApplied) {
+                return std::make_pair(std::move(data.waitForApplied(idx)).thenValue([idx = idx](auto &&) {
                     return ResultT<log_index>::success(idx);
                 }),
                                       std::move(action));
@@ -88,24 +88,25 @@ auto prototype_leader_state::compare_exchange(std::string key, std::string oldVa
     return std::move(f);
 }
 
-auto prototype_leader_state::remove(std::string key, prototype_state_methods::PrototypeWriteOptions options)
+auto prototype_leader_state::remove(std::string key, prototype_state_methods::prototype_write_options options)
     -> futures::Future<log_index> {
     return remove(std::vector<std::string> {std::move(key)}, options);
 }
 
-auto prototype_leader_state::remove(std::vector<std::string> keys, prototype_state_methods::PrototypeWriteOptions options)
+auto prototype_leader_state::remove(std::vector<std::string> keys,
+                                    prototype_state_methods::prototype_write_options options)
     -> futures::Future<log_index> {
-    return execute_op(prototype_log_entry::create_delete(std::move(keys)), options);
+    return executeOp(prototype_log_entry::create_delete(std::move(keys)), options);
 }
 
-auto prototype_leader_state::get(std::vector<std::string> keys, log_index wait_for_applied)
+auto prototype_leader_state::get(std::vector<std::string> keys, log_index waitForApplied)
     -> futures::Future<ResultT<std::unordered_map<std::string, std::string>>> {
-    auto f = _guarded_data.doUnderLock([&](auto &data) {
+    auto f = _guardedData.doUnderLock([&](auto &data) {
         if (data.didResign()) {
             THROW_DBMS_EXCEPTION(TRI_ERROR_CLUSTER_NOT_LEADER);
         }
 
-        return data.wait_for_applied(wait_for_applied);
+        return data.waitForApplied(waitForApplied);
     });
 
     return std::move(f).thenValue([keys = std::move(keys), weak = weak_from_this()](
@@ -115,7 +116,7 @@ auto prototype_leader_state::get(std::vector<std::string> keys, log_index wait_f
             return {TRI_ERROR_CLUSTER_NOT_LEADER};
         }
 
-        return self->_guarded_data.doUnderLock(
+        return self->_guardedData.doUnderLock(
             [&](guarded_data &data) -> ResultT<std::unordered_map<std::string, std::string>> {
                 if (data.didResign()) {
                     return {TRI_ERROR_CLUSTER_NOT_LEADER};
@@ -126,14 +127,14 @@ auto prototype_leader_state::get(std::vector<std::string> keys, log_index wait_f
     });
 }
 
-auto prototype_leader_state::get(std::string key, log_index wait_for_applied)
+auto prototype_leader_state::get(std::string key, log_index waitForApplied)
     -> futures::Future<ResultT<std::optional<std::string>>> {
-    auto f = _guarded_data.doUnderLock([&](auto &data) {
+    auto f = _guardedData.doUnderLock([&](auto &data) {
         if (data.didResign()) {
             THROW_DBMS_EXCEPTION(TRI_ERROR_CLUSTER_NOT_LEADER);
         }
 
-        return data.wait_for_applied(wait_for_applied);
+        return data.waitForApplied(waitForApplied);
     });
 
     return std::move(f).thenValue(
@@ -143,7 +144,7 @@ auto prototype_leader_state::get(std::string key, log_index wait_for_applied)
                 return {TRI_ERROR_CLUSTER_NOT_LEADER};
             }
 
-            return self->_guarded_data.doUnderLock([&](guarded_data &data) -> ResultT<std::optional<std::string>> {
+            return self->_guardedData.doUnderLock([&](guarded_data &data) -> ResultT<std::optional<std::string>> {
                 if (data.didResign()) {
                     return {TRI_ERROR_CLUSTER_NOT_LEADER};
                 }
@@ -153,14 +154,14 @@ auto prototype_leader_state::get(std::string key, log_index wait_for_applied)
         });
 }
 
-auto prototype_leader_state::get_snapshot(log_index waitForIndex)
+auto prototype_leader_state::getSnapshot(log_index waitForIndex)
     -> futures::Future<ResultT<std::unordered_map<std::string, std::string>>> {
-    auto f = _guarded_data.doUnderLock([&](auto &data) {
+    auto f = _guardedData.doUnderLock([&](auto &data) {
         if (data.didResign()) {
             THROW_DBMS_EXCEPTION(TRI_ERROR_REPLICATION_REPLICATED_LOG_PARTICIPANT_GONE);
         }
 
-        return data.wait_for_applied(waitForIndex);
+        return data.waitForApplied(waitForIndex);
     });
 
     return std::move(f).thenValue(
@@ -170,7 +171,7 @@ auto prototype_leader_state::get_snapshot(log_index waitForIndex)
                 return {TRI_ERROR_REPLICATION_REPLICATED_LOG_PARTICIPANT_GONE};
             }
 
-            return self->_guarded_data.doUnderLock(
+            return self->_guardedData.doUnderLock(
                 [&](guarded_data &data) -> ResultT<std::unordered_map<std::string, std::string>> {
                     if (data.didResign()) {
                         return {TRI_ERROR_REPLICATION_REPLICATED_LOG_PARTICIPANT_GONE};
@@ -181,19 +182,19 @@ auto prototype_leader_state::get_snapshot(log_index waitForIndex)
         });
 }
 
-auto prototype_leader_state::execute_op(prototype_log_entry const &entry,
-                                     prototype_state_methods::PrototypeWriteOptions options)
+auto prototype_leader_state::executeOp(prototype_log_entry const &entry,
+                                       prototype_state_methods::prototype_write_options options)
     -> futures::Future<log_index> {
-    auto [f, da] = _guarded_data.doUnderLock([&](auto &data) -> std::pair<futures::Future<log_index>, deferred_action> {
+    auto [f, da] = _guardedData.doUnderLock([&](auto &data) -> std::pair<futures::Future<log_index>, deferred_action> {
         if (data.didResign()) {
             THROW_DBMS_EXCEPTION(TRI_ERROR_CLUSTER_NOT_LEADER);
         }
 
-        auto [idx, action] = getStream()->insertDeferred(entry);
-        data.core->apply_to_ongoing_state(idx, entry);
+        auto [idx, action] = getStream()->insert_deferred(entry);
+        data.core->applyToOngoingState(idx, entry);
 
-        if (options.wait_for_applied) {
-            return std::make_pair(std::move(data.wait_for_applied(idx)).thenValue([idx = idx](auto &&) { return idx; }),
+        if (options.waitForApplied) {
+            return std::make_pair(std::move(data.waitForApplied(idx)).thenValue([idx = idx](auto &&) { return idx; }),
                                   std::move(action));
         }
         return std::make_pair(idx, std::move(action));
@@ -202,12 +203,12 @@ auto prototype_leader_state::execute_op(prototype_log_entry const &entry,
     return std::move(f);
 }
 
-auto prototype_leader_state::poll_new_entries() {
+auto prototype_leader_state::pollNewEntries() {
     auto stream = getStream();
-    return _guarded_data.doUnderLock([&](auto &data) { return stream->waitForIterator(data.nextWaitForIndex); });
+    return _guardedData.doUnderLock([&](auto &data) { return stream->wait_for_iterator(data.nextWaitForIndex); });
 }
 
-void prototype_leader_state::handle_poll_result(futures::Future<std::unique_ptr<EntryIterator>> &&pollFuture) {
+void prototype_leader_state::handlePollResult(futures::Future<std::unique_ptr<EntryIterator>> &&pollFuture) {
     std::move(pollFuture).then([weak = weak_from_this()](futures::Try<std::unique_ptr<EntryIterator>> tryResult) {
         auto self = weak.lock();
         if (self == nullptr) {
@@ -219,10 +220,10 @@ void prototype_leader_state::handle_poll_result(futures::Future<std::unique_ptr<
             THROW_DBMS_EXCEPTION(result.result());
         }
 
-        auto resolvePromises = self->_guarded_data.getLockedGuard()->apply_entries(std::move(result.get()));
+        auto resolvePromises = self->_guardedData.getLockedGuard()->apply_entries(std::move(result.get()));
         resolvePromises.fire();
 
-        self->handle_poll_result(self->poll_new_entries());
+        self->handlePollResult(self->pollNewEntries());
     });
 }
 
@@ -236,14 +237,14 @@ auto prototype_leader_state::guarded_data::apply_entries(std::unique_ptr<EntryIt
 
     if (core->flush()) {
         auto stream = self.getStream();
-        stream->release(core->get_last_persisted_index());
+        stream->release(core->getLastPersistedIndex());
     }
 
-    auto resolveQueue = std::make_unique<wait_for_appliedQueue>();
+    auto resolveQueue = std::make_unique<WaitForAppliedQueue>();
 
-    auto const end = wait_for_appliedQueue.lower_bound(nextWaitForIndex);
-    for (auto it = wait_for_appliedQueue.begin(); it != end;) {
-        resolveQueue->insert(wait_for_appliedQueue.extract(it++));
+    auto const end = waitForAppliedQueue.lower_bound(nextWaitForIndex);
+    for (auto it = waitForAppliedQueue.begin(); it != end;) {
+        resolveQueue->insert(waitForAppliedQueue.extract(it++));
     }
 
     return deferred_action([resolveQueue = std::move(resolveQueue)]() noexcept {
@@ -253,22 +254,22 @@ auto prototype_leader_state::guarded_data::apply_entries(std::unique_ptr<EntryIt
     });
 }
 
-auto prototype_leader_state::guarded_data::wait_for_applied(log_index index) -> futures::Future<futures::Unit> {
+auto prototype_leader_state::guarded_data::waitForApplied(log_index index) -> futures::Future<futures::Unit> {
     if (index < nextWaitForIndex) {
         return futures::Future<futures::Unit> {std::in_place};
     }
-    auto it = wait_for_appliedQueue.emplace(index, wait_for_appliedPromise {});
+    auto it = waitForAppliedQueue.emplace(index, WaitForAppliedPromise {});
     auto f = it->second.getFuture();
     TRI_ASSERT(f.valid());
     return f;
 }
 
-void prototype_leader_state::on_snapshot_completed() {
-    handle_poll_result(poll_new_entries());
+void prototype_leader_state::onSnapshotCompleted() {
+    handlePollResult(pollNewEntries());
 }
 
-auto prototype_leader_state::wait_for_applied(log_index waitForIndex) -> futures::Future<futures::Unit> {
-    return _guarded_data.getLockedGuard()->wait_for_applied(waitForIndex);
+auto prototype_leader_state::waitForApplied(log_index waitForIndex) -> futures::Future<futures::Unit> {
+    return _guardedData.getLockedGuard()->waitForApplied(waitForIndex);
 }
 
-#include <nil/dbms/replication/state/state.tpp>
+#include <nil/replication_sdk/replicated_state/replicated_state.tpp>

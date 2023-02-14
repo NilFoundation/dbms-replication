@@ -18,9 +18,9 @@
 #include <basics/voc_errors.h>
 #include <futures/Future.h>
 
-#include <nil/dbms/replication/state_machines/document/document_state_machine.hpp>
+#include <nil/replication_sdk/state_machines/document/document_state_machine.hpp>
 
-using namespace nil::dbms::replication::state::document;
+using namespace nil::dbms::replication_sdk::replicated_state::document;
 
 DocumentLeaderState::DocumentLeaderState(std::unique_ptr<DocumentCore> core) : _core(std::move(core)) {};
 
@@ -28,7 +28,7 @@ auto DocumentLeaderState::resign() &&noexcept -> std::unique_ptr<DocumentCore> {
     return std::move(_core);
 }
 
-auto DocumentLeaderState::recover_entries(std::unique_ptr<EntryIterator> ptr) -> futures::Future<Result> {
+auto DocumentLeaderState::recoverEntries(std::unique_ptr<EntryIterator> ptr) -> futures::Future<Result> {
     return {TRI_ERROR_NO_ERROR};
 }
 
@@ -47,30 +47,30 @@ auto DocumentFollowerState::apply_entries(std::unique_ptr<EntryIterator> ptr) no
     return {TRI_ERROR_NO_ERROR};
 };
 
-auto DocumentFactory::construct_follower(std::unique_ptr<DocumentCore> core) -> std::shared_ptr<DocumentFollowerState> {
+auto DocumentFactory::constructFollower(std::unique_ptr<DocumentCore> core) -> std::shared_ptr<DocumentFollowerState> {
     return std::make_shared<DocumentFollowerState>(std::move(core));
 }
 
-auto DocumentFactory::construct_leader(std::unique_ptr<DocumentCore> core) -> std::shared_ptr<DocumentLeaderState> {
+auto DocumentFactory::constructLeader(std::unique_ptr<DocumentCore> core) -> std::shared_ptr<DocumentLeaderState> {
     return std::make_shared<DocumentLeaderState>(std::move(core));
 }
 
-auto DocumentFactory::construct_core(global_log_identifier const &gid) -> std::unique_ptr<DocumentCore> {
+auto DocumentFactory::constructCore(global_log_identifier const &gid) -> std::unique_ptr<DocumentCore> {
     return std::make_unique<DocumentCore>();
 }
 
-auto nil::dbms::replication::state::EntryDeserializer<DocumentLogEntry>::operator()(
+auto nil::dbms::replication_sdk::replicated_state::entry_deserializer<DocumentLogEntry>::operator()(
     streams::serializer_tag_t<DocumentLogEntry>,
     velocypack::Slice s) const -> DocumentLogEntry {
     return DocumentLogEntry {};
 }
 
-void nil::dbms::replication::state::EntrySerializer<DocumentLogEntry>::operator()(
+void nil::dbms::replication_sdk::replicated_state::entry_serializer<DocumentLogEntry>::operator()(
     streams::serializer_tag_t<DocumentLogEntry>,
     DocumentLogEntry const &e,
     velocypack::Builder &b) const {
 }
 
-#include <nil/dbms/replication/state/state.tpp>
+#include <nil/replication_sdk/replicated_state/replicated_state.tpp>
 
-template struct nil::dbms::replication::state::ReplicatedState<DocumentState>;
+template struct nil::dbms::replication_sdk::replicated_state::replicated_state_t<DocumentState>;

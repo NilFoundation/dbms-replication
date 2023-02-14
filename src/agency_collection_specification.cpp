@@ -20,13 +20,13 @@
 #include <basics/debugging.h>
 #include <basics/static_strings.h>
 
-#include <nil/dbms/replication/agency_collection_specification.hpp>
+#include <nil/replication_sdk/agency_collection_specification.hpp>
 
-using namespace nil::dbms::replication::agency;
+using namespace nil::dbms::replication_sdk::agency;
 using namespace nil::dbms::basics;
 
-CollectionGroup::CollectionGroup(VPackSlice slice) :
-    id(CollectionGroupId {slice.get(StaticStrings::Id).extract<CollectionGroupId::Identifier::BaseType>()}),
+collection_group::collection_group(VPackSlice slice) :
+    id(collection_group_id {slice.get(StaticStrings::Id).extract<collection_group_id::Identifier::BaseType>()}),
     attributes(slice.get("attributes")) {
     {
         auto cs = slice.get("collections");
@@ -48,51 +48,51 @@ CollectionGroup::CollectionGroup(VPackSlice slice) :
     }
 }
 
-void CollectionGroup::to_velocy_pack(VPackBuilder &builder) const {
+void collection_group::toVelocyPack(VPackBuilder &builder) const {
     VPackObjectBuilder ob(&builder);
     builder.add(StaticStrings::Id, VPackValue(id.id()));
     builder.add(VPackValue("attributes"));
-    attributes.to_velocy_pack(builder);
+    attributes.toVelocyPack(builder);
     {
         VPackObjectBuilder cb(&builder, "collections");
         for (auto const &[cid, collection] : collections) {
             builder.add(VPackValue(cid));
-            collection.to_velocy_pack(builder);
+            collection.toVelocyPack(builder);
         }
     }
     {
         VPackArrayBuilder sb(&builder, "shardSheaves");
         for (auto const &sheaf : shardSheaves) {
-            sheaf.to_velocy_pack(builder);
+            sheaf.toVelocyPack(builder);
         }
     }
 }
 
-CollectionGroup::Collection::Collection(VPackSlice slice) {
+collection_group::Collection::Collection(VPackSlice slice) {
     TRI_ASSERT(slice.isEmptyObject());
 }
 
-void CollectionGroup::Collection::to_velocy_pack(VPackBuilder &builder) const {
+void collection_group::Collection::toVelocyPack(VPackBuilder &builder) const {
     builder.add(VPackSlice::emptyObjectSlice());
 }
 
-CollectionGroup::ShardSheaf::ShardSheaf(VPackSlice slice) {
+collection_group::shard_sheaf::shard_sheaf(VPackSlice slice) {
     TRI_ASSERT(slice.isObject());
-    replicatedLog = log_id {slice.get("replicatedLog").extract<uint64_t>()};
+    replicatedLog = LogId {slice.get("replicatedLog").extract<uint64_t>()};
 }
 
-void CollectionGroup::ShardSheaf::to_velocy_pack(VPackBuilder &builder) const {
+void collection_group::shard_sheaf::toVelocyPack(VPackBuilder &builder) const {
     VPackObjectBuilder ob(&builder);
     builder.add("replicatedLog", VPackValue(replicatedLog.id()));
 }
 
-CollectionGroup::Attributes::Attributes(VPackSlice slice) {
+collection_group::Attributes::Attributes(VPackSlice slice) {
     TRI_ASSERT(slice.isObject());
     waitForSync = slice.get(StaticStrings::WaitForSyncString).extract<bool>();
     writeConcern = slice.get(StaticStrings::WriteConcern).extract<std::size_t>();
 }
 
-void CollectionGroup::Attributes::to_velocy_pack(VPackBuilder &builder) const {
+void collection_group::Attributes::toVelocyPack(VPackBuilder &builder) const {
     VPackObjectBuilder ob(&builder);
     builder.add(StaticStrings::WaitForSyncString, VPackValue(waitForSync));
     builder.add(StaticStrings::WriteConcern, VPackValue(writeConcern));

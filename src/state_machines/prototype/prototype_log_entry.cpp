@@ -15,44 +15,44 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include <nil/dbms/replication/state_machines/prototype/prototype_log_entry.hpp>
+#include <nil/replication_sdk/state_machines/prototype/prototype_log_entry.hpp>
 
 using namespace nil::dbms;
-using namespace nil::dbms::replication;
-using namespace nil::dbms::replication::state;
-using namespace nil::dbms::replication::state::prototype;
+using namespace nil::dbms::replication_sdk;
+using namespace nil::dbms::replication_sdk::replicated_state;
+using namespace nil::dbms::replication_sdk::replicated_state::prototype;
 
 const char *prototype_log_entry::getType() noexcept {
     return std::visit(overload {
-                          [](prototype_log_entry::DeleteOperation const &o) { return kDelete; },
-                          [](prototype_log_entry::InsertOperation const &o) { return kInsert; },
-                          [](prototype_log_entry::compare_exchangeOperation const &o) { return kcompare_exchange; },
+                          [](prototype_log_entry::delete_operation const &o) { return kDelete; },
+                          [](prototype_log_entry::insert_operation const &o) { return kInsert; },
+                          [](prototype_log_entry::compare_exchange_operation const &o) { return kCompareExchange; },
                       },
                       op);
 }
 
 auto prototype_log_entry::create_insert(std::unordered_map<std::string, std::string> map) -> prototype_log_entry {
-    return prototype_log_entry {prototype_log_entry::InsertOperation {std::move(map)}};
+    return prototype_log_entry {prototype_log_entry::insert_operation {std::move(map)}};
 }
 
 auto prototype_log_entry::create_delete(std::vector<std::string> keys) -> prototype_log_entry {
-    return prototype_log_entry {prototype_log_entry::DeleteOperation {std::move(keys)}};
+    return prototype_log_entry {prototype_log_entry::delete_operation {std::move(keys)}};
 }
 
-auto prototype_log_entry::createcompare_exchange(std::string key, std::string oldValue, std::string newValue)
+auto prototype_log_entry::create_compare_exchange(std::string key, std::string oldValue, std::string newValue)
     -> prototype_log_entry {
     return prototype_log_entry {
-        prototype_log_entry::compare_exchangeOperation {std::move(key), std::move(oldValue), std::move(newValue)}};
+        prototype_log_entry::compare_exchange_operation {std::move(key), std::move(oldValue), std::move(newValue)}};
 }
 
-auto state::EntryDeserializer<state::prototype::prototype_log_entry>::operator()(
-    streams::serializer_tag_t<state::prototype::prototype_log_entry>,
-    velocypack::Slice s) const -> state::prototype::prototype_log_entry {
+auto replicated_state::entry_deserializer<replicated_state::prototype::prototype_log_entry>::operator()(
+    streams::serializer_tag_t<replicated_state::prototype::prototype_log_entry>,
+    velocypack::Slice s) const -> replicated_state::prototype::prototype_log_entry {
     return velocypack::deserialize<prototype::prototype_log_entry>(s);
 }
 
-void state::EntrySerializer<state::prototype::prototype_log_entry>::operator()(
-    streams::serializer_tag_t<state::prototype::prototype_log_entry>, prototype::prototype_log_entry const &e,
+void replicated_state::entry_serializer<replicated_state::prototype::prototype_log_entry>::operator()(
+    streams::serializer_tag_t<replicated_state::prototype::prototype_log_entry>, prototype::prototype_log_entry const &e,
     velocypack::Builder &b) const {
     velocypack::serialize(b, e);
 }

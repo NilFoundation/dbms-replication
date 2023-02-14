@@ -15,24 +15,24 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include <nil/dbms/replication/state_machines/prototype/prototype_leader_state.hpp>
-#include <nil/dbms/replication/state_machines/prototype/prototype_state_machine.hpp>
-#include <nil/dbms/replication/state_machines/prototype/prototype_core.hpp>
-#include <nil/dbms/replication/state_machines/prototype/prototype_follower_state.hpp>
+#include <nil/replication_sdk/state_machines/prototype/prototype_leader_state.hpp>
+#include <nil/replication_sdk/state_machines/prototype/prototype_state_machine.hpp>
+#include <nil/replication_sdk/state_machines/prototype/prototype_core.hpp>
+#include <nil/replication_sdk/state_machines/prototype/prototype_follower_state.hpp>
 
 #include <velocypack/Builder.h>
 #include <velocypack/Slice.h>
 
 using namespace nil::dbms;
-using namespace nil::dbms::replication;
-using namespace nil::dbms::replication::state;
-using namespace nil::dbms::replication::state::prototype;
+using namespace nil::dbms::replication_sdk;
+using namespace nil::dbms::replication_sdk::replicated_state;
+using namespace nil::dbms::replication_sdk::replicated_state::prototype;
 
-prototype_core::prototype_core(global_log_identifier log_id, logger_context loggerContext,
+prototype_core::prototype_core(global_log_identifier logId, logger_context loggerContext,
                              std::shared_ptr<iprototype_storage_interface> storage) :
     loggerContext(std::move(loggerContext)),
-    _log_id(std::move(log_id)), _storage(std::move(storage)) {
-    loadStateFromDB();
+    _logId(std::move(logId)), _storage(std::move(storage)) {
+    load_state_from_db();
 }
 
 bool prototype_core::flush() {
@@ -40,7 +40,7 @@ bool prototype_core::flush() {
         // no need to flush
         return false;
     }
-    auto result = _storage->put(_log_id, get_dump());
+    auto result = _storage->put(_logId, getDump());
     if (result.ok()) {
         _lastPersistedIndex = _lastAppliedIndex;
         LOG_CTX("af38a", TRACE, loggerContext)
@@ -52,8 +52,8 @@ bool prototype_core::flush() {
     return false;
 }
 
-void prototype_core::loadStateFromDB() {
-    auto result = _storage->get(_log_id);
+void prototype_core::load_state_from_db() {
+    auto result = _storage->get(_logId);
     if (result.ok()) {
         auto dump = std::move(result).get();
         _lastPersistedIndex = _lastAppliedIndex = dump.lastPersistedIndex;
@@ -67,26 +67,26 @@ void prototype_core::loadStateFromDB() {
 }
 
 auto prototype_core::get_snapshot() -> std::unordered_map<std::string, std::string> {
-    auto snapshot = get_read_state();
+    auto snapshot = getReadState();
     return std::unordered_map<std::string, std::string> {snapshot.begin(), snapshot.end()};
 }
 
 void prototype_core::apply_snapshot(std::unordered_map<std::string, std::string> const &snapshot) {
-    // Once the first apply_entries is executed, _lastAppliedIndex will have the
+    // Once the first applyEntries is executed, _lastAppliedIndex will have the
     // correct value.
     for (auto &[k, v] : snapshot) {
         _store = _store.set(k, v);
     }
 }
 
-auto prototype_core::get_dump() -> prototype_dump {
+auto prototype_core::getDump() -> prototype_dump {
     // After we write to DB, we set lastPersistedIndex to lastAppliedIndex,
     // because we want to persist the already updated value of lastPersistedIndex.
     return prototype_dump {_lastAppliedIndex, get_snapshot()};
 }
 
 auto prototype_core::get(std::string const &key) noexcept -> std::optional<std::string> {
-    if (auto it = get_read_state().find(key); it != nullptr) {
+    if (auto it = getReadState().find(key); it != nullptr) {
         return *it;
     }
     return std::nullopt;
@@ -94,7 +94,7 @@ auto prototype_core::get(std::string const &key) noexcept -> std::optional<std::
 
 auto prototype_core::get(std::vector<std::string> const &keys) -> std::unordered_map<std::string, std::string> {
     std::unordered_map<std::string, std::string> result;
-    auto snapshot = get_read_state();
+    auto snapshot = getReadState();
     for (auto const &it : keys) {
         if (auto found = snapshot.find(it); found != nullptr) {
             result.emplace(it, *found);
@@ -110,7 +110,7 @@ bool prototype_core::compare(std::string const &key, std::string const &value) {
     return false;
 }
 
-auto prototype_core::get_read_state() -> StorageType {
+auto prototype_core::getReadState() -> StorageType {
     if (_ongoingStates.empty()) {
         // This can happen on followers or before any entries have been applied.
         return _store;
@@ -118,40 +118,40 @@ auto prototype_core::get_read_state() -> StorageType {
     return _ongoingStates.front().second;
 }
 
-void prototype_core::apply_to_ongoing_state(log_index idx, prototype_log_entry const &entry) {
+void prototype_core::applyToOngoingState(log_index idx, prototype_log_entry const &entry) {
     apply_to_local_store(entry);
     _ongoingStates.emplace_back(idx, _store);
 }
 
-auto prototype_core::get_last_persisted_index() const noexcept -> log_index const & {
+auto prototype_core::getLastPersistedIndex() const noexcept -> log_index const & {
     return _lastPersistedIndex;
 }
 
-auto prototype_core::getlog_id() const noexcept -> global_log_identifier const & {
-    return _log_id;
+auto prototype_core::getLogId() const noexcept -> global_log_identifier const & {
+    return _logId;
 }
 
 void prototype_core::apply_to_local_store(prototype_log_entry const &entry) {
-    std::visit(overload {[&](prototype_log_entry::InsertOperation const &op) {
+    std::visit(overload {[&](prototype_log_entry::insert_operation const &op) {
                              for (auto const &[key, value] : op.map) {
                                  _store = _store.set(key, value);
                              }
                          },
-                         [&](prototype_log_entry::DeleteOperation const &op) {
+                         [&](prototype_log_entry::delete_operation const &op) {
                              for (auto const &it : op.keys) {
                                  _store = _store.erase(it);
                              }
                          },
-                         [&](prototype_log_entry::compare_exchangeOperation const &op) {
+                         [&](prototype_log_entry::compare_exchange_operation const &op) {
                              _store = _store.set(op.key, op.newValue);
                          }},
                entry.op);
 }
 
-void prototype_dump::to_velocy_pack(velocypack::Builder &b) {
+void prototype_dump::toVelocyPack(velocypack::Builder &b) {
     velocypack::serialize<prototype_dump>(b, *this);
 }
 
-auto prototype_dump::from_velocy_pack(velocypack::Slice s) -> prototype_dump {
+auto prototype_dump::fromVelocyPack(velocypack::Slice s) -> prototype_dump {
     return velocypack::deserialize<prototype_dump>(s);
 }

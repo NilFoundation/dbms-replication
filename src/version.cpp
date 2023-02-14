@@ -15,7 +15,7 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include <nil/dbms/replication/version.hpp>
+#include <nil/replication_sdk/version.hpp>
 
 #include <basics/result_t.h>
 #include <basics/exceptions.h>
@@ -26,20 +26,22 @@
 using namespace nil::dbms;
 using namespace nil::dbms::basics;
 
-auto nil::dbms::replication::parse_version(std::string_view version) -> ResultT<replication::Version> {
+auto nil::dbms::replication::parseVersion(std::string_view version) -> ResultT<replication::Version> {
     if (version.data() == nullptr) {
         version = "";
     }
     if (version == "1") {
         return replication::Version::ONE;
+    } else if (version == "2") {
+        return replication::Version::TWO;
     }
     return ResultT<replication::Version>::error(
-        TRI_ERROR_BAD_PARAMETER, StringUtils::concatT(R"(Replication version must be "1")", version));
+        TRI_ERROR_BAD_PARAMETER, StringUtils::concatT(R"(Replication version must be "1" or "2", but is )", version));
 }
 
-auto nil::dbms::replication::parse_version(velocypack::Slice version) -> nil::dbms::ResultT<replication::Version> {
+auto nil::dbms::replication::parseVersion(velocypack::Slice version) -> nil::dbms::ResultT<replication::Version> {
     if (version.isString()) {
-        return parse_version(version.stringView());
+        return parseVersion(version.stringView());
     } else {
         return ResultT<replication::Version>::error(
             TRI_ERROR_BAD_PARAMETER,
@@ -47,10 +49,12 @@ auto nil::dbms::replication::parse_version(velocypack::Slice version) -> nil::db
     }
 }
 
-auto replication::version_to_string(replication::Version version) -> std::string_view {
+auto replication::versionToString(replication::Version version) -> std::string_view {
     switch (version) {
         case Version::ONE:
             return "1";
+        case Version::TWO:
+            return "2";
     }
     abortOrThrow(
         TRI_ERROR_INTERNAL,

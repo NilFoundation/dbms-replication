@@ -15,12 +15,12 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include <nil/dbms/replication/state_machines/document/document_state_machine_feature.hpp>
-#include <nil/dbms/replication/state_machines/document/document_state_machine.hpp>
-#include <nil/dbms/replication/state/state_feature.hpp>
+#include <nil/replication_sdk/state_machines/document/document_state_machine_feature.hpp>
+#include <nil/replication_sdk/state_machines/document/document_state_machine.hpp>
+#include <nil/replication_sdk/replicated_state/replicated_state_feature.hpp>
 #include <features/ApplicationServer.h>
 
-using namespace nil::dbms::replication::state::document;
+using namespace nil::dbms::replication_sdk::replicated_state::document;
 
 void DocumentStateMachineFeature::start() {
     auto &feature = server().getFeature<replicated_state_app_feature>();

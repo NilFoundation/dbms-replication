@@ -15,35 +15,35 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include <nil/dbms/replication/state_machines/prototype/prototype_leader_state.hpp>
-#include <nil/dbms/replication/state_machines/prototype/prototype_state_machine.hpp>
-#include <nil/dbms/replication/state_machines/prototype/prototype_core.hpp>
-#include <nil/dbms/replication/state_machines/prototype/prototype_follower_state.hpp>
+#include <nil/replication_sdk/state_machines/prototype/prototype_leader_state.hpp>
+#include <nil/replication_sdk/state_machines/prototype/prototype_state_machine.hpp>
+#include <nil/replication_sdk/state_machines/prototype/prototype_core.hpp>
+#include <nil/replication_sdk/state_machines/prototype/prototype_follower_state.hpp>
 
 #include "futures/Future.h"
 #include "logger/LogContextKeys.h"
 #include "velocypack/Iterator.h"
 
-#include <nil/dbms/replication/log/log_common.hpp>
+#include <nil/replication_sdk/replicated_log/log_common.hpp>
 
 #include <utility>
 
 using namespace nil::dbms;
-using namespace nil::dbms::replication;
-using namespace nil::dbms::replication::state;
-using namespace nil::dbms::replication::state::prototype;
+using namespace nil::dbms::replication_sdk;
+using namespace nil::dbms::replication_sdk::replicated_state;
+using namespace nil::dbms::replication_sdk::replicated_state::prototype;
 
-auto prototype_factory::construct_follower(std::unique_ptr<prototype_core> core)
+auto prototype_factory::constructFollower(std::unique_ptr<prototype_core> core)
     -> std::shared_ptr<prototype_follower_state> {
     return std::make_shared<prototype_follower_state>(std::move(core), networkInterface);
 }
 
-auto prototype_factory::construct_leader(std::unique_ptr<prototype_core> core) -> std::shared_ptr<prototype_leader_state> {
+auto prototype_factory::constructLeader(std::unique_ptr<prototype_core> core) -> std::shared_ptr<prototype_leader_state> {
     return std::make_shared<prototype_leader_state>(std::move(core));
 }
 
-auto prototype_factory::construct_core(global_log_identifier const &gid) -> std::unique_ptr<prototype_core> {
-    logger_context const logContext = logger_context(Logger::REPLICATED_STATE).with<logContextKeylog_id>(gid.id);
+auto prototype_factory::constructCore(global_log_identifier const &gid) -> std::unique_ptr<prototype_core> {
+    logger_context const logContext = logger_context(Logger::REPLICATED_STATE).with<logContextKeyLogId>(gid.id);
     return std::make_unique<prototype_core>(gid, logContext, storageInterface);
 }
 
@@ -54,6 +54,6 @@ prototype_factory::prototype_factory(std::shared_ptr<iprototype_network_interfac
     storageInterface(std::move(storageInterface)) {
 }
 
-#include <nil/dbms/replication/state/state.tpp>
+#include <nil/replication_sdk/replicated_state/replicated_state.tpp>
 
-template struct state::ReplicatedState<prototype_state>;
+template struct replicated_state::replicated_state_t<prototype_state>;

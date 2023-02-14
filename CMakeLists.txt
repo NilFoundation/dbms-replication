@@ -15,9 +15,9 @@ cmake_policy(SET CMP0057 NEW)
 cmake_policy(SET CMP0076 NEW)
 
 list(APPEND CMAKE_MODULE_PATH
-     "${CMAKE_CURRENT_LIST_DIR}/cmake"
-     "${CMAKE_CURRENT_LIST_DIR}/cmake/packages"
-     "${CMAKE_CURRENT_LIST_DIR}/cmake/modules/share/modules/cmake")
+        "${CMAKE_CURRENT_LIST_DIR}/cmake"
+        "${CMAKE_CURRENT_LIST_DIR}/cmake/packages"
+        "${CMAKE_CURRENT_LIST_DIR}/cmake/modules/share/modules/cmake")
 
 include(CMConfig)
 include(CMSetupVersion)
@@ -36,7 +36,7 @@ macro(cm_find_package NAME)
     endforeach()
 endmacro()
 
-cm_project(replication WORKSPACE_NAME ${CMAKE_WORKSPACE_NAME} LANGUAGES ASM C CXX)
+cm_project(replication_sdk WORKSPACE_NAME ${CMAKE_WORKSPACE_NAME} LANGUAGES ASM C CXX)
 
 cm_find_package(CM)
 include(CMDeploy)
@@ -53,24 +53,54 @@ list(APPEND ${CURRENT_PROJECT_NAME}_SOURCES ${${CURRENT_PROJECT_NAME}_UNGROUPED_
 
 cm_setup_version(VERSION 0.1.0 PREFIX ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME})
 
-add_library(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE)
+add_library(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} STATIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/replicated_log/agency_log_specification.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/replicated_log/agency_specification_inspectors.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/replicated_log/algorithms.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/replicated_log/inmemory_log.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/replicated_log/log_common.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/replicated_log/log_core.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/replicated_log/log_entries.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/replicated_log/log_interfaces.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/replicated_log/log_status.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/replicated_log/network_messages.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/replicated_log/supervision_action.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/replicated_log/wait_for_bag.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/replicated_log/types.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/replicated_state/agency_specification.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/replicated_state/replicated_state_feature.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/replicated_state/replicated_state_token.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/replicated_state/state_common.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/replicated_state/state_status.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/replicated_state/update_replicated_state.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/state_machines/black_hole/black_hole_state_machine.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/state_machines/black_hole/black_hole_state_machine_feature.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/state_machines/document/document_state_machine.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/state_machines/document/document_state_machine_feature.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/state_machines/prototype/prototype_log_entry.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/state_machines/prototype/prototype_leader_state.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/state_machines/prototype/prototype_core.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/state_machines/prototype/prototype_follower_state.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/state_machines/prototype/prototype_state_machine.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/agency_collection_specification.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp
+        )
 
-set_target_properties(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} PROPERTIES
-                      EXPORT_NAME ${CURRENT_PROJECT_NAME})
+target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} PUBLIC
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+        "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>"
+        INTERFACE
+        ${Boost_INCLUDE_DIRS}
+        )
 
+target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} immer)
+target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} velocypack)
+target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} taocpp::json)
+target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} fmt::fmt)
 
-target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
-                           "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-                           "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>"
-
-                           ${Boost_INCLUDE_DIRS})
-
-target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
-                      ${Boost_LIBRARIES})
-
-cm_deploy(TARGETS ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
-          INCLUDE include
-          NAMESPACE ${CMAKE_WORKSPACE_NAME}::)
+#cm_deploy(TARGETS ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
+#          INCLUDE include
+#          NAMESPACE ${CMAKE_WORKSPACE_NAME}::)
 
 if(BUILD_TESTS)
     add_subdirectory(test)
