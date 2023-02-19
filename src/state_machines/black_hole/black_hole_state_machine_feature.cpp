@@ -16,15 +16,15 @@
 //---------------------------------------------------------------------------//
 
 #include <features/ApplicationServer.h>
-#include <nil/replication_sdk/replicated_state/replicated_state_feature.hpp>
-#include <nil/replication_sdk/replicated_state/replicated_state.hpp>
-#include <nil/replication_sdk/state_machines/black_hole/black_hole_state_machine_feature.hpp>
-#include <nil/replication_sdk/state_machines/black_hole/black_hole_state_machine.hpp>
+#include <nil/dbms/replication/replicated_state/replicated_state_feature.hpp>
+#include <nil/dbms/replication/replicated_state/replicated_state.hpp>
+#include <nil/dbms/replication/state_machines/black_hole/black_hole_state_machine_feature.hpp>
+#include <nil/dbms/replication/state_machines/black_hole/black_hole_state_machine.hpp>
 
 using namespace nil::dbms;
-using namespace nil::dbms::replication_sdk;
-using namespace nil::dbms::replication_sdk::replicated_state;
-using namespace nil::dbms::replication_sdk::replicated_state::black_hole;
+using namespace nil::dbms::replication;
+using namespace nil::dbms::replication::replicated_state;
+using namespace nil::dbms::replication::replicated_state::black_hole;
 
 void BlackHoleStateMachineFeature::start() {
     auto &feature = server().getFeature<replicated_state_app_feature>();

@@ -15,6 +15,6 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include <nil/replication_sdk/replicated_log/agency_specification_inspectors.hpp>
+#include <nil/dbms/replication/replicated_log/agency_specification_inspectors.hpp>
 
-namespace nil::dbms::replication_sdk::agency { }    // namespace nil::dbms::replication_sdk::agency
+namespace nil::dbms::replication::agency { }    // namespace nil::dbms::replication::agency

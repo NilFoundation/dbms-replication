@@ -15,7 +15,7 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include <nil/replication_sdk/replicated_state/state_common.hpp>
+#include <nil/dbms/replication/replicated_state/state_common.hpp>
 
 #include <velocypack/Value.h>
 #include <velocypack/Builder.h>
@@ -24,8 +24,8 @@
 #include "basics/static_strings.h"
 #include "basics/time_string.h"
 
-using namespace nil::dbms::replication_sdk;
-using namespace nil::dbms::replication_sdk::replicated_state;
+using namespace nil::dbms::replication;
+using namespace nil::dbms::replication::replicated_state;
 
 namespace {
     auto const String_InProgress = std::string_view {"InProgress"};

@@ -15,7 +15,7 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include <nil/replication_sdk/replicated_log/log_entries.hpp>
+#include <nil/dbms/replication/replicated_log/log_entries.hpp>
 #include "inspection/vpack.h"
 
 #include <basics/static_strings.h>
@@ -24,9 +24,9 @@
 #include <basics/velocypack_helper.h>
 
 using namespace nil::dbms;
-using namespace nil::dbms::replication_sdk;
+using namespace nil::dbms::replication;
 
-auto replication_sdk::operator==(log_payload const &left, log_payload const &right) -> bool {
+auto replication::operator==(log_payload const &left, log_payload const &right) -> bool {
     return nil::dbms::basics::VelocyPackHelper::equal(left.slice(), right.slice(), true);
 }
 
@@ -57,8 +57,10 @@ auto log_payload::slice() const noexcept -> velocypack::Slice {
     return VPackSlice(buffer.data());
 }
 
-persisting_log_entry::persisting_log_entry(term_index_pair termIndexPair, std::variant<log_meta_payload, log_payload> payload) :
-    _termIndex(termIndexPair), _payload(std::move(payload)) {
+persisting_log_entry::persisting_log_entry(term_index_pair termIndexPair,
+                                           std::variant<log_meta_payload, log_payload> payload) :
+    _termIndex(termIndexPair),
+    _payload(std::move(payload)) {
 }
 
 auto persisting_log_entry::logTerm() const noexcept -> log_term {
@@ -243,7 +245,8 @@ auto log_meta_payload::first_entry_of_term::fromVelocyPack(velocypack::Slice s) 
     return first_entry_of_term {std::move(leader), std::move(participants)};
 }
 
-auto log_meta_payload::withFirstEntryOfTerm(ParticipantId leader, agency::participants_config config) -> log_meta_payload {
+auto log_meta_payload::withFirstEntryOfTerm(ParticipantId leader, agency::participants_config config)
+    -> log_meta_payload {
     return log_meta_payload {first_entry_of_term {.leader = std::move(leader), .participants = std::move(config)}};
 }
 

@@ -20,9 +20,9 @@
 #include <basics/debugging.h>
 #include <basics/static_strings.h>
 
-#include <nil/replication_sdk/agency_collection_specification.hpp>
+#include <nil/dbms/replication/agency_collection_specification.hpp>
 
-using namespace nil::dbms::replication_sdk::agency;
+using namespace nil::dbms::replication::agency;
 using namespace nil::dbms::basics;
 
 collection_group::collection_group(VPackSlice slice) :

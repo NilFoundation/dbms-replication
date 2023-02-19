@@ -15,7 +15,7 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include <nil/replication_sdk/replicated_log/log_common.hpp>
+#include <nil/dbms/replication/replicated_log/log_common.hpp>
 
 #include <velocypack/Builder.h>
 #include <velocypack/Slice.h>
@@ -32,7 +32,7 @@
 #include <fmt/core.h>
 
 using namespace nil::dbms;
-using namespace nil::dbms::replication_sdk;
+using namespace nil::dbms::replication;
 
 auto log_index::operator+(std::uint64_t delta) const -> log_index {
     return log_index(this->value + delta);
@@ -42,7 +42,7 @@ log_index::operator velocypack::Value() const noexcept {
     return velocypack::Value(value);
 }
 
-auto replication_sdk::operator<<(std::ostream &os, log_index idx) -> std::ostream & {
+auto replication::operator<<(std::ostream &os, log_index idx) -> std::ostream & {
     return os << idx.value;
 }
 
@@ -58,7 +58,7 @@ log_term::operator velocypack::Value() const noexcept {
     return velocypack::Value(value);
 }
 
-auto replication_sdk::operator<<(std::ostream &os, log_term term) -> std::ostream & {
+auto replication::operator<<(std::ostream &os, log_term term) -> std::ostream & {
     return os << term.value;
 }
 
@@ -74,33 +74,33 @@ auto LogId::fromString(std::string_view name) noexcept -> std::optional<LogId> {
     return velocypack::Value(id());
 }
 
-auto replication_sdk::to_string(LogId logId) -> std::string {
+auto replication::to_string(LogId logId) -> std::string {
     return std::to_string(logId.id());
 }
 
-auto replication_sdk::to_string(log_term term) -> std::string {
+auto replication::to_string(log_term term) -> std::string {
     return std::to_string(term.value);
 }
 
-auto replication_sdk::to_string(log_index index) -> std::string {
+auto replication::to_string(log_index index) -> std::string {
     return std::to_string(index.value);
 }
 
-void replication_sdk::term_index_pair::toVelocyPack(velocypack::Builder &builder) const {
+void replication::term_index_pair::toVelocyPack(velocypack::Builder &builder) const {
     serialize(builder, *this);
 }
 
-auto replication_sdk::term_index_pair::fromVelocyPack(velocypack::Slice slice) -> term_index_pair {
+auto replication::term_index_pair::fromVelocyPack(velocypack::Slice slice) -> term_index_pair {
     return velocypack::deserialize<term_index_pair>(slice);
 }
 
-replication_sdk::term_index_pair::term_index_pair(log_term term, log_index index) noexcept : term(term), index(index) {
+replication::term_index_pair::term_index_pair(log_term term, log_index index) noexcept : term(term), index(index) {
     // Index 0 has always term 0, and it is the only index with that term.
     // FIXME this should be an if and only if
     TRI_ASSERT((index != log_index {0}) || (term == log_term {0}));
 }
 
-auto replication_sdk::operator<<(std::ostream &os, term_index_pair pair) -> std::ostream & {
+auto replication::operator<<(std::ostream &os, term_index_pair pair) -> std::ostream & {
     return os << '(' << pair.term << ':' << pair.index << ')';
 }
 
@@ -120,11 +120,11 @@ auto log_range::contains(log_index idx) const noexcept -> bool {
     return from <= idx && idx < to;
 }
 
-auto replication_sdk::operator<<(std::ostream &os, log_range const &r) -> std::ostream & {
+auto replication::operator<<(std::ostream &os, log_range const &r) -> std::ostream & {
     return os << "[" << r.from << ", " << r.to << ")";
 }
 
-auto replication_sdk::intersect(log_range a, log_range b) noexcept -> log_range {
+auto replication::intersect(log_range a, log_range b) noexcept -> log_range {
     auto max_from = std::max(a.from, b.from);
     auto min_to = std::min(a.to, b.to);
     if (max_from > min_to) {
@@ -134,7 +134,7 @@ auto replication_sdk::intersect(log_range a, log_range b) noexcept -> log_range 
     }
 }
 
-auto replication_sdk::to_string(log_range const &r) -> std::string {
+auto replication::to_string(log_range const &r) -> std::string {
     return basics::StringUtils::concatT("[", r.from, ", ", r.to, ")");
 }
 
@@ -173,7 +173,8 @@ auto replicated_log::commit_fail_reason::with_nothing_to_commit() noexcept -> co
 }
 
 auto replicated_log::commit_fail_reason::with_quorum_size_not_reached(quorum_size_not_reached::who_type who,
-                                                                term_index_pair spearhead) noexcept -> commit_fail_reason {
+                                                                      term_index_pair spearhead) noexcept
+    -> commit_fail_reason {
     return commit_fail_reason(std::in_place, quorum_size_not_reached {std::move(who), spearhead});
 }
 
@@ -270,8 +271,8 @@ void replicated_log::commit_fail_reason::quorum_size_not_reached::participant_in
     }
 }
 
-auto replicated_log::operator<<(std::ostream &ostream, commit_fail_reason::quorum_size_not_reached::participant_info pInfo)
-    -> std::ostream & {
+auto replicated_log::operator<<(std::ostream &ostream,
+                                commit_fail_reason::quorum_size_not_reached::participant_info pInfo) -> std::ostream & {
     ostream << "{ ";
     ostream << std::boolalpha;
     if (pInfo.isAllowedInQuorum) {
@@ -295,7 +296,8 @@ auto replicated_log::commit_fail_reason::forced_participant_not_in_quorum::fromV
     return {s.get(WhoFieldName).toString()};
 }
 
-void replicated_log::commit_fail_reason::forced_participant_not_in_quorum::toVelocyPack(velocypack::Builder &builder) const {
+void replicated_log::commit_fail_reason::forced_participant_not_in_quorum::toVelocyPack(
+    velocypack::Builder &builder) const {
     VPackObjectBuilder obj(&builder);
     builder.add(ReasonFieldName, VPackValue(ForcedParticipantNotInQuorumEnum));
     builder.add(WhoFieldName, VPackValue(who));
@@ -402,15 +404,15 @@ auto replicated_log::to_string(commit_fail_reason const &r) -> std::string {
     return std::visit(ToStringVisitor {}, r.value);
 }
 
-void replication_sdk::participant_flags::toVelocyPack(velocypack::Builder &builder) const {
+void replication::participant_flags::toVelocyPack(velocypack::Builder &builder) const {
     serialize(builder, *this);
 }
 
-auto replication_sdk::participant_flags::fromVelocyPack(velocypack::Slice s) -> participant_flags {
+auto replication::participant_flags::fromVelocyPack(velocypack::Slice s) -> participant_flags {
     return velocypack::deserialize<participant_flags>(s);
 }
 
-auto replication_sdk::operator<<(std::ostream &os, participant_flags const &f) -> std::ostream & {
+auto replication::operator<<(std::ostream &os, participant_flags const &f) -> std::ostream & {
     os << "{ ";
     if (f.forced) {
         os << "forced ";
@@ -437,5 +439,6 @@ void replicated_log::commit_fail_reason::fewer_participants_than_write_concern::
     builder.add(StaticStrings::EffectiveWriteConcern, VPackValue(effectiveWriteConcern));
 }
 
-global_log_identifier::global_log_identifier(const std::string &database, LogId id) : database(std::move(database)), id(id) {
+global_log_identifier::global_log_identifier(const std::string &database, LogId id) :
+    database(std::move(database)), id(id) {
 }

@@ -15,15 +15,15 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include <nil/replication_sdk/replicated_log/ilog_interfaces.hpp>
-#include <nil/replication_sdk/replicated_log/log_core.hpp>
-#include <nil/replication_sdk/replicated_log/log_status.hpp>
-#include <nil/replication_sdk/replicated_log/replicated_log_metrics.hpp>
+#include <nil/dbms/replication/replicated_log/ilog_interfaces.hpp>
+#include <nil/dbms/replication/replicated_log/log_core.hpp>
+#include <nil/dbms/replication/replicated_log/log_status.hpp>
+#include <nil/dbms/replication/replicated_log/replicated_log_metrics.hpp>
 
 #include <basics/static_strings.h>
 
 using namespace nil::dbms;
-using namespace nil::dbms::replication_sdk;
+using namespace nil::dbms::replication;
 
 auto replicated_log::ilog_participant::getTerm() const noexcept -> std::optional<log_term> {
     return getQuickStatus().getCurrentTerm();

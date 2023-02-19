@@ -16,9 +16,9 @@
 //---------------------------------------------------------------------------//
 
 #include "inspection/vpack.h"
-#include <nil/replication_sdk/replicated_log/log_status.hpp>
-#include <nil/replication_sdk/replicated_log/agency_log_specification.hpp>
-#include <nil/replication_sdk/replicated_log/agency_specification_inspectors.hpp>
+#include <nil/dbms/replication/replicated_log/log_status.hpp>
+#include <nil/dbms/replication/replicated_log/agency_log_specification.hpp>
+#include <nil/dbms/replication/replicated_log/agency_specification_inspectors.hpp>
 #include <basics/exceptions.h>
 #include <basics/static_strings.h>
 #include <basics/application_exit.h>
@@ -28,8 +28,8 @@
 #include <velocypack/Builder.h>
 #include <velocypack/Iterator.h>
 
-using namespace nil::dbms::replication_sdk;
-using namespace nil::dbms::replication_sdk::replicated_log;
+using namespace nil::dbms::replication;
+using namespace nil::dbms::replication::replicated_log;
 
 auto quick_log_status::getCurrentTerm() const noexcept -> std::optional<log_term> {
     if (role == ParticipantRole::kUnconfigured) {

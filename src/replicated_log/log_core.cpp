@@ -15,8 +15,8 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include <nil/replication_sdk/replicated_log/log_core.hpp>
-#include <nil/replication_sdk/replicated_log/persisted_log.hpp>
+#include <nil/dbms/replication/replicated_log/log_core.hpp>
+#include <nil/dbms/replication/replicated_log/persisted_log.hpp>
 
 #include <basics/exceptions.h>
 #include <basics/debugging.h>
@@ -26,10 +26,11 @@
 #include <utility>
 
 using namespace nil::dbms;
-using namespace nil::dbms::replication_sdk;
-using namespace nil::dbms::replication_sdk::replicated_log;
+using namespace nil::dbms::replication;
+using namespace nil::dbms::replication::replicated_log;
 
-replicated_log::log_core::log_core(std::shared_ptr<persisted_log> persistedLog) : _persistedLog(std::move(persistedLog)) {
+replicated_log::log_core::log_core(std::shared_ptr<persisted_log> persistedLog) :
+    _persistedLog(std::move(persistedLog)) {
     if (ADB_UNLIKELY(_persistedLog == nullptr)) {
         TRI_ASSERT(false);
         THROW_DBMS_EXCEPTION_MESSAGE(TRI_ERROR_INTERNAL,

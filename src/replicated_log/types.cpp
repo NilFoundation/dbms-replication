@@ -15,7 +15,7 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include <nil/replication_sdk/replicated_log/types.hpp>
+#include <nil/dbms/replication/replicated_log/types.hpp>
 
 #include <basics/exceptions.h>
 #include <basics/application_exit.h>
@@ -30,8 +30,8 @@
 #include <utility>
 
 using namespace nil::dbms;
-using namespace nil::dbms::replication_sdk;
-using namespace nil::dbms::replication_sdk::replicated_log;
+using namespace nil::dbms::replication;
+using namespace nil::dbms::replication::replicated_log;
 
 replicated_log::quorum_data::quorum_data(log_index index, log_term term, std::vector<ParticipantId> quorum) :
     index(index), term(term), quorum(std::move(quorum)) {

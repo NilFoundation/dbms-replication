@@ -15,7 +15,7 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include <nil/replication_sdk/replicated_log/network_messages.hpp>
+#include <nil/dbms/replication/replicated_log/network_messages.hpp>
 
 #include <velocypack/Builder.h>
 #include <velocypack/Iterator.h>
@@ -42,8 +42,8 @@
 #endif
 
 using namespace nil::dbms;
-using namespace nil::dbms::replication_sdk;
-using namespace nil::dbms::replication_sdk::replicated_log;
+using namespace nil::dbms::replication;
+using namespace nil::dbms::replication::replicated_log;
 
 #if (_MSC_VER >= 1)
 // suppress false positive warning:
@@ -174,7 +174,8 @@ auto replicated_log::append_entries_result::fromVelocyPack(velocypack::Slice sli
 }
 
 replicated_log::append_entries_result::append_entries_result(log_term logTerm, ErrorCode errorCode,
-                                                             append_entries_error_reason reason, message_id id) noexcept :
+                                                             append_entries_error_reason reason, message_id id) noexcept
+    :
     logTerm(logTerm),
     errorCode(errorCode), reason(std::move(reason)), messageId(id) {
     static_assert(std::is_nothrow_move_constructible_v<append_entries_error_reason>);
@@ -186,7 +187,7 @@ replicated_log::append_entries_result::append_entries_result(log_term logTerm, m
 }
 
 replicated_log::append_entries_result::append_entries_result(log_term term, replicated_log::message_id id,
-                                                         term_index_pair conflict,
+                                                             term_index_pair conflict,
                                                              append_entries_error_reason reason) noexcept :
     append_entries_result(term, TRI_ERROR_REPLICATION_REPLICATED_LOG_APPEND_ENTRIES_REJECTED, std::move(reason), id) {
     static_assert(std::is_nothrow_move_constructible_v<append_entries_error_reason>);
@@ -194,7 +195,7 @@ replicated_log::append_entries_result::append_entries_result(log_term term, repl
 }
 
 auto replicated_log::append_entries_result::withConflict(log_term term, replicated_log::message_id id,
-                                                       term_index_pair conflict) noexcept
+                                                         term_index_pair conflict) noexcept
     -> replicated_log::append_entries_result {
     return {term, id, conflict, {append_entries_error_reason::ErrorType::kNoPrevLogMatch}};
 }
@@ -207,7 +208,7 @@ auto replicated_log::append_entries_result::withRejection(log_term term, message
 }
 
 auto replicated_log::append_entries_result::withPersistenceError(log_term term, replicated_log::message_id id,
-                                                               Result const &res) noexcept
+                                                                 Result const &res) noexcept
     -> replicated_log::append_entries_result {
     return {term,
             res.errorNumber(),
@@ -260,14 +261,14 @@ auto replicated_log::append_entries_request::fromVelocyPack(velocypack::Slice sl
     });
 
     return append_entries_request {leaderTerm,         leaderId,  prevLogEntry, leaderCommit,
-                                 largestCommonIndex, messageId, waitForSync,  std::move(entries)};
+                                   largestCommonIndex, messageId, waitForSync,  std::move(entries)};
 }
 
 replicated_log::append_entries_request::append_entries_request(log_term leaderTerm, ParticipantId leaderId,
-                                                           term_index_pair prevLogEntry, log_index leaderCommit,
-                                                           log_index lowestIndexToKeep,
-                                                           replicated_log::message_id messageId, bool waitForSync,
-                                                           EntryContainer entries) :
+                                                               term_index_pair prevLogEntry, log_index leaderCommit,
+                                                               log_index lowestIndexToKeep,
+                                                               replicated_log::message_id messageId, bool waitForSync,
+                                                               EntryContainer entries) :
     leaderTerm(leaderTerm),
     leaderId(std::move(leaderId)), prevLogEntry(prevLogEntry), leaderCommit(leaderCommit),
     lowestIndexToKeep(lowestIndexToKeep), messageId(messageId), entries(std::move(entries)), waitForSync(waitForSync) {

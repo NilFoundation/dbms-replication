@@ -15,7 +15,7 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include <nil/replication_sdk/replicated_log/algorithms.hpp>
+#include <nil/dbms/replication/replicated_log/algorithms.hpp>
 
 #include "basics/exceptions.h"
 #include "basics/string_utils.h"
@@ -29,10 +29,10 @@
 #include <type_traits>
 
 using namespace nil::dbms;
-using namespace nil::dbms::replication_sdk;
-using namespace nil::dbms::replication_sdk::agency;
-using namespace nil::dbms::replication_sdk::algorithms;
-using namespace nil::dbms::replication_sdk::replicated_log;
+using namespace nil::dbms::replication;
+using namespace nil::dbms::replication::agency;
+using namespace nil::dbms::replication::algorithms;
+using namespace nil::dbms::replication::replicated_log;
 
 auto algorithms::to_string(conflict_reason r) noexcept -> std::string_view {
     switch (r) {
@@ -94,8 +94,8 @@ auto algorithms::detectConflict(replicated_log::in_memory_log const &log, term_i
 }
 
 auto algorithms::update_replicated_log(log_action_context &ctx, ServerID const &myServerId, RebootId myRebootId,
-                                     LogId logId, agency::log_plan_specification const *spec,
-                                     std::shared_ptr<cluster::IFailureOracle const> failureOracle) noexcept
+                                       LogId logId, agency::log_plan_specification const *spec,
+                                       std::shared_ptr<cluster::IFailureOracle const> failureOracle) noexcept
     -> futures::Future<nil::dbms::Result> {
     auto result = basics::catchToResultT([&]() -> futures::Future<nil::dbms::Result> {
         if (spec == nullptr) {
@@ -121,7 +121,7 @@ auto algorithms::update_replicated_log(log_action_context &ctx, ServerID const &
                 [](auto &&quorum) -> Result { return Result {TRI_ERROR_NO_ERROR}; });
         } else if (plannedLeader.has_value() && plannedLeader->serverId == myServerId &&
                    plannedLeader->rebootId == myRebootId) {
-            auto followers = std::vector<std::shared_ptr<replication_sdk::replicated_log::abstract_follower>> {};
+            auto followers = std::vector<std::shared_ptr<replication::replicated_log::abstract_follower>> {};
             for (auto const &[participant, data] : spec->participantsConfig.participants) {
                 if (participant != myServerId) {
                     followers.emplace_back(ctx.buildAbstractFollowerImpl(logId, participant));
@@ -262,9 +262,9 @@ auto algorithms::calculate_commit_index(std::vector<participant_state> const &pa
             // is too low. Return its index, but report that it is dragging down the
             // commit index.
             TRI_ASSERT(minForcedParticipantId.has_value());
-            return {
-                commitIndex,
-                    commit_fail_reason::with_forced_participant_not_in_quorum(minForcedParticipantId.value()), {}};
+            return {commitIndex,
+                    commit_fail_reason::with_forced_participant_not_in_quorum(minForcedParticipantId.value()),
+                    {}};
         } else {
             // We commit as far away as we can get, but report all participants who
             // can't be part of a quorum for the spearhead.

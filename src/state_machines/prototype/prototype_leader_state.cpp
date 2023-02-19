@@ -15,16 +15,16 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include <nil/replication_sdk/state_machines/prototype/prototype_leader_state.hpp>
-#include <nil/replication_sdk/state_machines/prototype/prototype_state_machine.hpp>
-#include <nil/replication_sdk/state_machines/prototype/prototype_follower_state.hpp>
+#include <nil/dbms/replication/state_machines/prototype/prototype_leader_state.hpp>
+#include <nil/dbms/replication/state_machines/prototype/prototype_state_machine.hpp>
+#include <nil/dbms/replication/state_machines/prototype/prototype_follower_state.hpp>
 
 #include "logger/LogContextKeys.h"
 
 using namespace nil::dbms;
-using namespace nil::dbms::replication_sdk;
-using namespace nil::dbms::replication_sdk::replicated_state;
-using namespace nil::dbms::replication_sdk::replicated_state::prototype;
+using namespace nil::dbms::replication;
+using namespace nil::dbms::replication::replicated_state;
+using namespace nil::dbms::replication::replicated_state::prototype;
 
 prototype_leader_state::prototype_leader_state(std::unique_ptr<prototype_core> core) :
     loggerContext(core->loggerContext.with<logContextKeyStateComponent>("LeaderState")),
@@ -272,4 +272,4 @@ auto prototype_leader_state::waitForApplied(log_index waitForIndex) -> futures::
     return _guardedData.getLockedGuard()->waitForApplied(waitForIndex);
 }
 
-#include <nil/replication_sdk/replicated_state/replicated_state.tpp>
+#include <nil/dbms/replication/replicated_state/replicated_state.tpp>

@@ -15,7 +15,7 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include <nil/replication_sdk/version.hpp>
+#include <nil/dbms/replication/version.hpp>
 
 #include <basics/result_t.h>
 #include <basics/exceptions.h>

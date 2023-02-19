@@ -15,16 +15,16 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include <nil/replication_sdk/state_machines/prototype/prototype_leader_state.hpp>
-#include <nil/replication_sdk/state_machines/prototype/prototype_core.hpp>
-#include <nil/replication_sdk/state_machines/prototype/prototype_follower_state.hpp>
+#include <nil/dbms/replication/state_machines/prototype/prototype_leader_state.hpp>
+#include <nil/dbms/replication/state_machines/prototype/prototype_core.hpp>
+#include <nil/dbms/replication/state_machines/prototype/prototype_follower_state.hpp>
 
 #include "logger/LogContextKeys.h"
 
 using namespace nil::dbms;
-using namespace nil::dbms::replication_sdk;
-using namespace nil::dbms::replication_sdk::replicated_state;
-using namespace nil::dbms::replication_sdk::replicated_state::prototype;
+using namespace nil::dbms::replication;
+using namespace nil::dbms::replication::replicated_state;
+using namespace nil::dbms::replication::replicated_state::prototype;
 
 prototype_follower_state::prototype_follower_state(std::unique_ptr<prototype_core> core,
                                                std::shared_ptr<iprototype_network_interface>
@@ -110,4 +110,4 @@ auto prototype_follower_state::get(std::vector<std::string> keys, log_index wait
         });
 }
 
-#include <nil/replication_sdk/replicated_state/replicated_state.tpp>
+#include <nil/dbms/replication/replicated_state/replicated_state.tpp>

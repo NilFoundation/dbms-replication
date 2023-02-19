@@ -18,9 +18,9 @@
 #include <basics/voc_errors.h>
 #include <futures/Future.h>
 
-#include <nil/replication_sdk/state_machines/document/document_state_machine.hpp>
+#include <nil/dbms/replication/state_machines/document/document_state_machine.hpp>
 
-using namespace nil::dbms::replication_sdk::replicated_state::document;
+using namespace nil::dbms::replication::replicated_state::document;
 
 DocumentLeaderState::DocumentLeaderState(std::unique_ptr<DocumentCore> core) : _core(std::move(core)) {};
 
@@ -59,18 +59,18 @@ auto DocumentFactory::constructCore(global_log_identifier const &gid) -> std::un
     return std::make_unique<DocumentCore>();
 }
 
-auto nil::dbms::replication_sdk::replicated_state::entry_deserializer<DocumentLogEntry>::operator()(
+auto nil::dbms::replication::replicated_state::entry_deserializer<DocumentLogEntry>::operator()(
     streams::serializer_tag_t<DocumentLogEntry>,
     velocypack::Slice s) const -> DocumentLogEntry {
     return DocumentLogEntry {};
 }
 
-void nil::dbms::replication_sdk::replicated_state::entry_serializer<DocumentLogEntry>::operator()(
+void nil::dbms::replication::replicated_state::entry_serializer<DocumentLogEntry>::operator()(
     streams::serializer_tag_t<DocumentLogEntry>,
     DocumentLogEntry const &e,
     velocypack::Builder &b) const {
 }
 
-#include <nil/replication_sdk/replicated_state/replicated_state.tpp>
+#include <nil/dbms/replication/replicated_state/replicated_state.tpp>
 
-template struct nil::dbms::replication_sdk::replicated_state::replicated_state_t<DocumentState>;
+template struct nil::dbms::replication::replicated_state::replicated_state_t<DocumentState>;

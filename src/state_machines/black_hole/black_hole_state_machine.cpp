@@ -17,12 +17,12 @@
 #include <basics/voc_errors.h>
 #include <futures/Future.h>
 
-#include <nil/replication_sdk/state_machines/black_hole/black_hole_state_machine.hpp>
+#include <nil/dbms/replication/state_machines/black_hole/black_hole_state_machine.hpp>
 
 using namespace nil::dbms;
-using namespace nil::dbms::replication_sdk;
-using namespace nil::dbms::replication_sdk::replicated_state;
-using namespace nil::dbms::replication_sdk::replicated_state::black_hole;
+using namespace nil::dbms::replication;
+using namespace nil::dbms::replication::replicated_state;
+using namespace nil::dbms::replication::replicated_state::black_hole;
 
 auto BlackHoleLeaderState::recoverEntries(std::unique_ptr<EntryIterator> ptr) -> futures::Future<Result> {
     return {TRI_ERROR_NO_ERROR};
@@ -80,6 +80,6 @@ void replicated_state::entry_serializer<replicated_state::black_hole::BlackHoleL
     b.add(velocypack::Value(e.value));
 }
 
-#include <nil/replication_sdk/replicated_state/replicated_state.tpp>
+#include <nil/dbms/replication/replicated_state/replicated_state.tpp>
 
 template struct replicated_state::replicated_state_t<BlackHoleState>;

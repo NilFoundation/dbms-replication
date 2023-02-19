@@ -15,4 +15,4 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include <nil/replication_sdk/replicated_state/replicated_state_token.hpp>
+#include <nil/dbms/replication/replicated_state/replicated_state_token.hpp>

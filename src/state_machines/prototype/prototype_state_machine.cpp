@@ -15,23 +15,23 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include <nil/replication_sdk/state_machines/prototype/prototype_leader_state.hpp>
-#include <nil/replication_sdk/state_machines/prototype/prototype_state_machine.hpp>
-#include <nil/replication_sdk/state_machines/prototype/prototype_core.hpp>
-#include <nil/replication_sdk/state_machines/prototype/prototype_follower_state.hpp>
+#include <nil/dbms/replication/state_machines/prototype/prototype_leader_state.hpp>
+#include <nil/dbms/replication/state_machines/prototype/prototype_state_machine.hpp>
+#include <nil/dbms/replication/state_machines/prototype/prototype_core.hpp>
+#include <nil/dbms/replication/state_machines/prototype/prototype_follower_state.hpp>
 
 #include "futures/Future.h"
 #include "logger/LogContextKeys.h"
 #include "velocypack/Iterator.h"
 
-#include <nil/replication_sdk/replicated_log/log_common.hpp>
+#include <nil/dbms/replication/replicated_log/log_common.hpp>
 
 #include <utility>
 
 using namespace nil::dbms;
-using namespace nil::dbms::replication_sdk;
-using namespace nil::dbms::replication_sdk::replicated_state;
-using namespace nil::dbms::replication_sdk::replicated_state::prototype;
+using namespace nil::dbms::replication;
+using namespace nil::dbms::replication::replicated_state;
+using namespace nil::dbms::replication::replicated_state::prototype;
 
 auto prototype_factory::constructFollower(std::unique_ptr<prototype_core> core)
     -> std::shared_ptr<prototype_follower_state> {
@@ -54,6 +54,6 @@ prototype_factory::prototype_factory(std::shared_ptr<iprototype_network_interfac
     storageInterface(std::move(storageInterface)) {
 }
 
-#include <nil/replication_sdk/replicated_state/replicated_state.tpp>
+#include <nil/dbms/replication/replicated_state/replicated_state.tpp>
 
 template struct replicated_state::replicated_state_t<prototype_state>;

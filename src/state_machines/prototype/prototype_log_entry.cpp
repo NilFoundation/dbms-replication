@@ -15,12 +15,12 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include <nil/replication_sdk/state_machines/prototype/prototype_log_entry.hpp>
+#include <nil/dbms/replication/state_machines/prototype/prototype_log_entry.hpp>
 
 using namespace nil::dbms;
-using namespace nil::dbms::replication_sdk;
-using namespace nil::dbms::replication_sdk::replicated_state;
-using namespace nil::dbms::replication_sdk::replicated_state::prototype;
+using namespace nil::dbms::replication;
+using namespace nil::dbms::replication::replicated_state;
+using namespace nil::dbms::replication::replicated_state::prototype;
 
 const char *prototype_log_entry::getType() noexcept {
     return std::visit(overload {

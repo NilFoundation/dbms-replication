@@ -15,7 +15,7 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include <nil/replication_sdk/replicated_state/replicated_state_feature.hpp>
+#include <nil/dbms/replication/replicated_state/replicated_state_feature.hpp>
 
 #include <features/ApplicationServer.h>
 #include "basics/exceptions.h"
@@ -23,10 +23,10 @@
 #include "basics/debugging.h"
 #include "logger/LogContextKeys.h"
 #include "logger/LogMacros.h"
-#include "nil/replication_sdk/replicated_log/replicated_log.hpp"
+#include "nil/replication/replicated_log/replicated_log.hpp"
 
 using namespace nil::dbms;
-using namespace nil::dbms::replication_sdk;
+using namespace nil::dbms::replication;
 
 auto replicated_state::replicated_state_feature::createReplicatedState(std::string_view name,
                                                                      std::shared_ptr<replicated_log::replicated_log_t>

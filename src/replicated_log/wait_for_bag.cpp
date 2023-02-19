@@ -15,7 +15,7 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include <nil/replication_sdk/replicated_log/wait_for_bag.hpp>
+#include <nil/dbms/replication/replicated_log/wait_for_bag.hpp>
 
 #include <futures/Promise.h>
 #include <futures/Future.h>

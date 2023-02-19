@@ -15,7 +15,7 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include <nil/replication_sdk/replicated_state/state_status.hpp>
+#include <nil/dbms/replication/replicated_state/state_status.hpp>
 
 #include "basics/exceptions.h"
 #include "basics/static_strings.h"
@@ -26,8 +26,8 @@
 #include <velocypack/Slice.h>
 
 using namespace nil::dbms;
-using namespace nil::dbms::replication_sdk;
-using namespace nil::dbms::replication_sdk::replicated_state;
+using namespace nil::dbms::replication;
+using namespace nil::dbms::replication::replicated_state;
 
 namespace {
     inline constexpr std::string_view StringWaitingForLeadershipEstablished = "WaitingForLeadershipEstablished";
@@ -97,7 +97,7 @@ auto state_status::fromVelocyPack(velocypack::Slice slice) -> state_status {
     }
 }
 
-auto nil::dbms::replication_sdk::replicated_state::operator<<(std::ostream &out, state_status const &stateStatus)
+auto nil::dbms::replication::replicated_state::operator<<(std::ostream &out, state_status const &stateStatus)
     -> std::ostream & {
     VPackBuilder builder;
     stateStatus.toVelocyPack(builder);

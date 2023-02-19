@@ -21,17 +21,17 @@
 #include "inspection/vpack.h"
 #include "logger/LogMacros.h"
 
-#include <nil/replication_sdk/replicated_log/agency_log_specification.hpp>
-#include <nil/replication_sdk/replicated_log/agency_specification_inspectors.hpp>
-#include <nil/replication_sdk/replicated_log/supervision_action.hpp>
+#include <nil/dbms/replication/replicated_log/agency_log_specification.hpp>
+#include <nil/dbms/replication/replicated_log/agency_specification_inspectors.hpp>
+#include <nil/dbms/replication/replicated_log/supervision_action.hpp>
 
 #include <fmt/core.h>
 #include <variant>
 
-using namespace nil::dbms::replication_sdk::agency;
-//namespace paths = nil::dbms::cluster::paths::aliases;
+using namespace nil::dbms::replication::agency;
+// namespace paths = nil::dbms::cluster::paths::aliases;
 
-namespace nil::dbms::replication_sdk::replicated_log {
+namespace nil::dbms::replication::replicated_log {
 
     auto executeAction(Log log, Action &action) -> ActionContext {
         auto currentSupervision = std::invoke([&]() -> std::optional<log_current_supervision> {
@@ -52,4 +52,4 @@ namespace nil::dbms::replication_sdk::replicated_log {
         return ctx;
     }
 
-}    // namespace nil::dbms::replication_sdk::replicated_log
+}    // namespace nil::dbms::replication::replicated_log

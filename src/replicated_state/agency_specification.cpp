@@ -15,7 +15,7 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include <nil/replication_sdk/replicated_state/agency_specification.hpp>
+#include <nil/dbms/replication/replicated_state/agency_specification.hpp>
 #include "basics/exceptions.h"
 #include "basics/static_strings.h"
 #include "basics/debugging.h"
@@ -27,9 +27,9 @@
 #include "inspection/vpack.h"
 
 using namespace nil::dbms;
-using namespace nil::dbms::replication_sdk;
-using namespace nil::dbms::replication_sdk::replicated_state;
-using namespace nil::dbms::replication_sdk::replicated_state::agency;
+using namespace nil::dbms::replication;
+using namespace nil::dbms::replication::replicated_state;
+using namespace nil::dbms::replication::replicated_state::agency;
 
 auto StatusCodeStringTransformer::toSerialized(StatusCode source, std::string &target) const -> inspection::Status {
     target = to_string(source);

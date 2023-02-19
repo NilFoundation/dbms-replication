@@ -15,8 +15,8 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include "nil/replication_sdk/replicated_log/agency_specification_inspectors.hpp"
-#include "nil/replication_sdk/replicated_log/agency_log_specification.hpp"
+#include <nil/dbms/replication/replicated_log/agency_specification_inspectors.hpp>
+#include <nil/dbms/replication/replicated_log/agency_log_specification.hpp>
 
 #include "basics/exceptions.h"
 #include "basics/static_strings.h"
@@ -30,8 +30,8 @@
 #include <type_traits>
 
 using namespace nil::dbms;
-using namespace nil::dbms::replication_sdk;
-using namespace nil::dbms::replication_sdk::agency;
+using namespace nil::dbms::replication;
+using namespace nil::dbms::replication::agency;
 
 log_plan_config::log_plan_config(std::size_t effectiveWriteConcern, bool waitForSync) noexcept :
     effectiveWriteConcern(effectiveWriteConcern), waitForSync(waitForSync) {
@@ -50,7 +50,7 @@ log_plan_specification::log_plan_specification(LogId id, std::optional<log_plan_
 }
 
 log_plan_specification::log_plan_specification(LogId id, std::optional<log_plan_term_specification> term,
-                                           participants_config participantsConfig) :
+                                               participants_config participantsConfig) :
     id(id),
     currentTerm(std::move(term)), participantsConfig(std::move(participantsConfig)) {
 }
@@ -75,8 +75,10 @@ auto agency::to_string(log_current_supervision_election::ErrorCode ec) noexcept 
     FATAL_ERROR_ABORT();
 }
 
-log_target_config::log_target_config(std::size_t writeConcern, std::size_t softWriteConcern, bool waitForSync) noexcept :
-    writeConcern(writeConcern), softWriteConcern(softWriteConcern), waitForSync(waitForSync) {
+log_target_config::log_target_config(std::size_t writeConcern, std::size_t softWriteConcern, bool waitForSync) noexcept
+    :
+    writeConcern(writeConcern),
+    softWriteConcern(softWriteConcern), waitForSync(waitForSync) {
 }
 
 log_target::log_target(LogId id, ParticipantsFlagsMap const &participants, log_target_config const &config) :

@@ -15,18 +15,18 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include <nil/replication_sdk/state_machines/prototype/prototype_leader_state.hpp>
-#include <nil/replication_sdk/state_machines/prototype/prototype_state_machine.hpp>
-#include <nil/replication_sdk/state_machines/prototype/prototype_core.hpp>
-#include <nil/replication_sdk/state_machines/prototype/prototype_follower_state.hpp>
+#include <nil/dbms/replication/state_machines/prototype/prototype_leader_state.hpp>
+#include <nil/dbms/replication/state_machines/prototype/prototype_state_machine.hpp>
+#include <nil/dbms/replication/state_machines/prototype/prototype_core.hpp>
+#include <nil/dbms/replication/state_machines/prototype/prototype_follower_state.hpp>
 
 #include <velocypack/Builder.h>
 #include <velocypack/Slice.h>
 
 using namespace nil::dbms;
-using namespace nil::dbms::replication_sdk;
-using namespace nil::dbms::replication_sdk::replicated_state;
-using namespace nil::dbms::replication_sdk::replicated_state::prototype;
+using namespace nil::dbms::replication;
+using namespace nil::dbms::replication::replicated_state;
+using namespace nil::dbms::replication::replicated_state::prototype;
 
 prototype_core::prototype_core(global_log_identifier logId, logger_context loggerContext,
                              std::shared_ptr<iprototype_storage_interface> storage) :

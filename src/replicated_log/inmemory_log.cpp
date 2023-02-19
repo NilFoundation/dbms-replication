@@ -15,11 +15,11 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include <nil/replication_sdk/logger_context.hpp>
-#include <nil/replication_sdk/replicated_log/inmemory_log.hpp>
-#include <nil/replication_sdk/replicated_log/log_core.hpp>
-#include <nil/replication_sdk/replicated_log/persisted_log.hpp>
-#include <nil/replication_sdk/replicated_log/replicated_log_iterator.hpp>
+#include <nil/dbms/replication/logger_context.hpp>
+#include <nil/dbms/replication/replicated_log/inmemory_log.hpp>
+#include <nil/dbms/replication/replicated_log/log_core.hpp>
+#include <nil/dbms/replication/replicated_log/persisted_log.hpp>
+#include <nil/dbms/replication/replicated_log/replicated_log_iterator.hpp>
 
 #include <basics/exceptions.h>
 #include <basics/string_utils.h>
@@ -46,7 +46,7 @@
 #endif
 
 using namespace nil::dbms;
-using namespace nil::dbms::replication_sdk;
+using namespace nil::dbms::replication;
 
 auto replicated_log::in_memory_log::get_last_index() const noexcept -> log_index {
     return get_last_term_index_pair().index;
@@ -99,7 +99,6 @@ auto replicated_log::in_memory_log::get_first_index_of_term(log_term term) const
     }
 }
 
-
 auto replicated_log::in_memory_log::get_last_index_of_term(log_term term) const noexcept -> std::optional<log_index> {
     // Note that we're using reverse iterators
     auto it = std::lower_bound(_log.rbegin(), _log.rend(), term, [](auto const &entry, auto const &term) {
@@ -107,9 +106,9 @@ auto replicated_log::in_memory_log::get_last_index_of_term(log_term term) const 
         return entry.entry().logTerm() > term;
     });
 
-	// Using `.base()` here is required, because immer's reverse iterators
-	// are not properly C++20--compatible. Otherwise we get:
-	// '__x.base() != __y.base()' would be invalid: ISO C++20 considers use of overloaded operator '!='
+    // Using `.base()` here is required, because immer's reverse iterators
+    // are not properly C++20--compatible. Otherwise we get:
+    // '__x.base() != __y.base()' would be invalid: ISO C++20 considers use of overloaded operator '!='
     if (it.base() != _log.rend().base() && it->entry().logTerm() == term) {
         return it->entry().logIndex();
     } else {
@@ -342,7 +341,8 @@ auto replicated_log::in_memory_log::get_first_index() const noexcept -> log_inde
     return _first;
 }
 
-auto replicated_log::in_memory_log::loadFromLogCore(replicated_log::log_core const &core) -> replicated_log::in_memory_log {
+auto replicated_log::in_memory_log::loadFromLogCore(replicated_log::log_core const &core)
+    -> replicated_log::in_memory_log {
     auto iter = core.read(log_index {0});
     auto log = log_type::transient_type {};
     while (auto entry = iter->next()) {

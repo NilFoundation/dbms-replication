@@ -16,13 +16,13 @@
 //---------------------------------------------------------------------------//
 
 #include "logger/LogMacros.h"
-#include <nil/replication_sdk/replicated_state/update_replicated_state.hpp>
-#include <nil/replication_sdk/replicated_state/state_common.hpp>
+#include <nil/dbms/replication/replicated_state/update_replicated_state.hpp>
+#include <nil/dbms/replication/replicated_state/state_common.hpp>
 #include "basics/voc_errors.h"
 #include "logger/LogContextKeys.h"
 
-using namespace nil::dbms::replication_sdk;
-using namespace nil::dbms::replication_sdk::replicated_state;
+using namespace nil::dbms::replication;
+using namespace nil::dbms::replication::replicated_state;
 
 auto algorithms::updateReplicatedState(state_action_context &ctx, std::string const &serverId, LogId id,
                                        replicated_state::agency::Plan const *spec,
