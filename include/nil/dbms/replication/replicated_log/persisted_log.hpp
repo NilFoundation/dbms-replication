@@ -30,7 +30,7 @@ namespace nil::dbms::replication::replicated_log {
 
     /**
      * @brief Interface to persist a replicated log locally. Implemented by
-     * arango::RocksDBLog.
+     * RocksDBLog.
      */
     struct persisted_log {
         virtual ~persisted_log() = default;
