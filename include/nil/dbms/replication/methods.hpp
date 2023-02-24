@@ -148,7 +148,7 @@ namespace nil::dbms::replication {
         [[nodiscard]] virtual auto waitForStateReady(LogId, std::uint64_t version)
             -> futures::Future<ResultT<consensus::index_t>> = 0;
 
-        virtual auto createReplicatedState(replicated_state::agency::Target spec) const -> futures::Future<Result> = 0;
+        virtual auto create_replicated_state(replicated_state::agency::Target spec) const -> futures::Future<Result> = 0;
         virtual auto deleteReplicatedState(LogId id) const -> futures::Future<Result> = 0;
 
         virtual auto getLocalStatus(LogId) const -> futures::Future<replicated_state::state_status> = 0;

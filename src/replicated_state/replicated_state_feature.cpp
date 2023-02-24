@@ -23,12 +23,12 @@
 #include "basics/debugging.h"
 #include "logger/LogContextKeys.h"
 #include "logger/LogMacros.h"
-#include "nil/replication/replicated_log/replicated_log.hpp"
+#include "nil/dbms/replication/replicated_log/replicated_log.hpp"
 
 using namespace nil::dbms;
 using namespace nil::dbms::replication;
 
-auto replicated_state::replicated_state_feature::createReplicatedState(std::string_view name,
+auto replicated_state::replicated_state_feature::create_replicated_state(std::string_view name,
                                                                      std::shared_ptr<replicated_log::replicated_log_t>
                                                                          log,
                                                                      logger_context const &loggerContext)
@@ -43,10 +43,10 @@ auto replicated_state::replicated_state_feature::createReplicatedState(std::stri
     THROW_DBMS_EXCEPTION(TRI_ERROR_DBMS_DATA_SOURCE_NOT_FOUND);    // TODO fix error code
 }
 
-auto replicated_state::replicated_state_feature::createReplicatedState(std::string_view name,
+auto replicated_state::replicated_state_feature::create_replicated_state(std::string_view name,
                                                                      std::shared_ptr<replicated_log::replicated_log_t>
                                                                          log) -> std::shared_ptr<replicated_state_base> {
-    return createReplicatedState(name, std::move(log), logger_context(Logger::REPLICATED_STATE));
+    return create_replicated_state(name, std::move(log), logger_context(Logger::REPLICATED_STATE));
 }
 
 void replicated_state::replicated_state_feature::assertWasInserted(std::string_view name, bool wasInserted) {

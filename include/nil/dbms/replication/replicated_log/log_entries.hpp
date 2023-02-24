@@ -138,11 +138,11 @@ namespace nil::dbms::replication {
 
     // A log entry, enriched with non-persisted metadata, to be stored in an
     // InMemoryLog.
-    class in_memory_log_entry {
+    class inmemory_log_entry {
     public:
         using clock = std::chrono::steady_clock;
 
-        explicit in_memory_log_entry(persisting_log_entry entry, bool waitForSync = false);
+        explicit inmemory_log_entry(persisting_log_entry entry, bool waitForSync = false);
 
         [[nodiscard]] auto insert_tp() const noexcept -> clock::time_point;
         void setInsertTp(clock::time_point) noexcept;

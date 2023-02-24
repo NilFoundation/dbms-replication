@@ -51,7 +51,7 @@ namespace nil::dbms::replication::algorithms {
 
     auto to_string(conflict_reason r) noexcept -> std::string_view;
 
-    auto detectConflict(replicated_log::in_memory_log const &log, term_index_pair prevLog) noexcept
+    auto detectConflict(replicated_log::inmemory_log const &log, term_index_pair prevLog) noexcept
         -> std::optional<std::pair<conflict_reason, term_index_pair>>;
 
     struct log_action_context {

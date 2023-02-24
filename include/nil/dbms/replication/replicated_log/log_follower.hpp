@@ -63,7 +63,7 @@ namespace nil::dbms::replication::replicated_log {
         [[nodiscard]] auto getCommittedLogIterator(log_index firstIndex) const -> std::unique_ptr<LogIterator>;
         [[nodiscard]] auto getCommitIndex() const noexcept -> log_index override;
 
-        [[nodiscard]] auto copyInMemoryLog() const -> in_memory_log override;
+        [[nodiscard]] auto copyInMemoryLog() const -> inmemory_log override;
         [[nodiscard]] auto release(log_index doneWithIdx) -> Result override;
 
         /// @brief Resolved when the leader has committed at least one entry.
@@ -71,13 +71,13 @@ namespace nil::dbms::replication::replicated_log {
 
     private:
         log_follower(logger_context const &, std::shared_ptr<replicated_log_metrics> logMetrics, ParticipantId id,
-                     std::unique_ptr<log_core> logCore, log_term term, std::optional<ParticipantId> leaderId,
-                     in_memory_log inMemoryLog);
+                    std::unique_ptr<log_core> logCore, log_term term, std::optional<ParticipantId> leaderId,
+                     inmemory_log inMemoryLog);
 
         struct guarded_follower_data {
             guarded_follower_data() = delete;
             guarded_follower_data(log_follower const &self, std::unique_ptr<log_core> logCore,
-                                  in_memory_log inMemoryLog);
+                                  inmemory_log inMemoryLog);
 
             [[nodiscard]] auto getLocalStatistics() const noexcept -> log_statistics;
             [[nodiscard]] auto getCommittedLogIterator(log_index firstIndex) const -> std::unique_ptr<LogRangeIterator>;
@@ -89,7 +89,7 @@ namespace nil::dbms::replication::replicated_log {
             [[nodiscard]] auto waitForResign() -> std::pair<futures::Future<futures::Unit>, deferred_action>;
 
             log_follower const &_follower;
-            in_memory_log _inMemoryLog;
+            inmemory_log _inMemoryLog;
             std::unique_ptr<log_core> _logCore;
             log_index _commitIndex {0};
             log_index _lowestIndexToKeep;

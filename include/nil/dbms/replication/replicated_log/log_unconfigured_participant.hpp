@@ -47,7 +47,7 @@ namespace nil::dbms::replication::replicated_log {
         [[nodiscard]] auto waitForResign() -> futures::Future<futures::Unit> override;
         [[nodiscard]] auto getCommitIndex() const noexcept -> nil::dbms::replication::log_index override;
 
-        [[nodiscard]] auto copyInMemoryLog() const -> in_memory_log override;
+        [[nodiscard]] auto copyInMemoryLog() const -> inmemory_log override;
 
     private:
         std::shared_ptr<nil::dbms::replication::replicated_log::replicated_log_metrics> const _logMetrics;

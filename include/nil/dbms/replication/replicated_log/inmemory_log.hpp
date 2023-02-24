@@ -51,11 +51,11 @@ namespace nil::dbms::replication::replicated_log {
      * catching up. On startup (or currently, on creation of a leader or follower
      * instance), this is restored from the persisted log.
      */
-    struct in_memory_log {
+    struct inmemory_log {
     public:
         template<typename T>
         using log_type_t = ::immer::flex_vector<T, nil::dbms::immer::dbms_memory_policy>;
-        using log_type = log_type_t<in_memory_log_entry>;
+        using log_type = log_type_t<inmemory_log_entry>;
         using log_type_persisted = log_type_t<persisting_log_entry>;
 
     private:
@@ -63,25 +63,25 @@ namespace nil::dbms::replication::replicated_log {
         log_index _first {1};
 
     public:
-        in_memory_log() = default;
-        explicit in_memory_log(log_type log);
+        inmemory_log() = default;
+        explicit inmemory_log(log_type log);
 
-        in_memory_log(in_memory_log &&other) noexcept;
-        in_memory_log(in_memory_log const &) = default;
+        inmemory_log(inmemory_log &&other) noexcept;
+        inmemory_log(inmemory_log const &) = default;
 
-        auto operator=(in_memory_log &&other) noexcept -> in_memory_log &;
-        auto operator=(in_memory_log const &) -> in_memory_log & = default;
+        auto operator=(inmemory_log &&other) noexcept -> inmemory_log &;
+        auto operator=(inmemory_log const &) -> inmemory_log & = default;
 
-        ~in_memory_log() noexcept = default;
+        ~inmemory_log() noexcept = default;
 
         [[nodiscard]] auto get_last_term_index_pair() const noexcept -> term_index_pair;
         [[nodiscard]] auto get_last_index() const noexcept -> log_index;
         [[nodiscard]] auto get_last_term() const noexcept -> log_term;
-        [[nodiscard]] auto get_last_entry() const noexcept -> std::optional<in_memory_log_entry>;
-        [[nodiscard]] auto get_first_entry() const noexcept -> std::optional<in_memory_log_entry>;
+        [[nodiscard]] auto get_last_entry() const noexcept -> std::optional<inmemory_log_entry>;
+        [[nodiscard]] auto get_first_entry() const noexcept -> std::optional<inmemory_log_entry>;
         [[nodiscard]] auto get_first_index() const noexcept -> log_index;
         [[nodiscard]] auto get_next_index() const noexcept -> log_index;
-        [[nodiscard]] auto get_entry_by_index(log_index idx) const noexcept -> std::optional<in_memory_log_entry>;
+        [[nodiscard]] auto get_entry_by_index(log_index idx) const noexcept -> std::optional<inmemory_log_entry>;
         [[nodiscard]] auto slice(log_index from, log_index to) const -> log_type;
 
         [[nodiscard]] auto get_first_index_of_term(log_term term) const noexcept -> std::optional<log_index>;
@@ -93,13 +93,13 @@ namespace nil::dbms::replication::replicated_log {
         [[nodiscard]] auto back() const noexcept -> decltype(_log)::const_reference;
         [[nodiscard]] auto empty() const noexcept -> bool;
 
-        [[nodiscard]] auto release(log_index stop) const -> in_memory_log;
+        [[nodiscard]] auto release(log_index stop) const -> inmemory_log;
 
-        void append_in_place(logger_context const &logContext, in_memory_log_entry entry);
+        void append_in_place(logger_context const &logContext, inmemory_log_entry entry);
 
-        [[nodiscard]] auto append(logger_context const &logContext, log_type entries) const -> in_memory_log;
+        [[nodiscard]] auto append(logger_context const &logContext, log_type entries) const -> inmemory_log;
         [[nodiscard]] auto append(logger_context const &logContext, log_type_persisted const &entries) const
-            -> in_memory_log;
+            -> inmemory_log;
 
         [[nodiscard]] auto get_iterator_from(log_index fromIdx) const -> std::unique_ptr<LogIterator>;
         [[nodiscard]] auto get_internal_iterator_from(log_index fromIdx) const
@@ -107,14 +107,14 @@ namespace nil::dbms::replication::replicated_log {
         [[nodiscard]] auto get_internal_iterator_range(log_index fromIdx, log_index toIdx) const
             -> std::unique_ptr<persisted_log_iterator>;
         [[nodiscard]] auto get_memtry_iterator_from(log_index fromIdx) const
-            -> std::unique_ptr<typed_log_iterator<in_memory_log_entry>>;
+            -> std::unique_ptr<typed_log_iterator<inmemory_log_entry>>;
         [[nodiscard]] auto get_memtry_iterator_range(log_index fromIdx, log_index toIdx) const
-            -> std::unique_ptr<typed_log_iterator<in_memory_log_entry>>;
+            -> std::unique_ptr<typed_log_iterator<inmemory_log_entry>>;
         // get an iterator for range [from, to).
         [[nodiscard]] auto get_iterator_range(log_index fromIdx, log_index toIdx) const
             -> std::unique_ptr<LogRangeIterator>;
 
-        [[nodiscard]] auto take_snapshot_up_to_and_including(log_index until) const -> in_memory_log;
+        [[nodiscard]] auto take_snapshot_up_to_and_including(log_index until) const -> inmemory_log;
 
         [[nodiscard]] auto copy_flex_vector() const -> log_type;
 
@@ -122,10 +122,10 @@ namespace nil::dbms::replication::replicated_log {
         [[nodiscard]] static auto dump(log_type const &log) -> std::string;
         [[nodiscard]] auto dump() const -> std::string;
 
-        [[nodiscard]] static auto loadFromLogCore(log_core const &) -> in_memory_log;
+        [[nodiscard]] static auto loadFromLogCore(log_core const &) -> inmemory_log;
 
     protected:
-        explicit in_memory_log(log_type log, log_index first);
+        explicit inmemory_log(log_type log, log_index first);
     };
 
 }    // namespace nil::dbms::replication::replicated_log

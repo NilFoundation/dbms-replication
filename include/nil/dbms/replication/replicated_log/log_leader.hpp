@@ -111,7 +111,7 @@ namespace nil::dbms::replication::replicated_log {
 
         [[nodiscard]] auto waitForIterator(log_index index) -> WaitForIteratorFuture override;
 
-        [[nodiscard]] auto getReplicatedLogSnapshot() const -> in_memory_log::log_type;
+        [[nodiscard]] auto getReplicatedLogSnapshot() const -> inmemory_log::log_type;
 
         [[nodiscard]] auto readReplicatedEntryByIndex(log_index idx) const -> std::optional<persisting_log_entry>;
 
@@ -131,7 +131,7 @@ namespace nil::dbms::replication::replicated_log {
 
         [[nodiscard]] auto release(log_index doneWithIdx) -> Result override;
 
-        [[nodiscard]] auto copyInMemoryLog() const -> in_memory_log override;
+        [[nodiscard]] auto copyInMemoryLog() const -> inmemory_log override;
 
         // Returns true if the leader has established its leadership: at least one
         // entry within its term has been committed.
@@ -157,9 +157,9 @@ namespace nil::dbms::replication::replicated_log {
     protected:
         // Use the named constructor construct() to create a leader!
         log_leader(logger_context logContext, std::shared_ptr<replicated_log_metrics> logMetrics,
-                   std::shared_ptr<replicated_log_global_settings const> options, agency::log_plan_config config,
-                   ParticipantId id, log_term term, log_index firstIndexOfCurrentTerm, in_memory_log inMemoryLog,
-                   std::shared_ptr<cluster::IFailureOracle const> failureOracle);
+                  std::shared_ptr<replicated_log_global_settings const> options, agency::log_plan_config config,
+                  ParticipantId id, log_term term, log_index firstIndexOfCurrentTerm, inmemory_log inMemoryLog,
+                  std::shared_ptr<cluster::IFailureOracle const> failureOracle);
 
     private:
         struct guarded_leader_data;
@@ -232,12 +232,12 @@ namespace nil::dbms::replication::replicated_log {
         struct resolved_promise_set {
             WaitForQueue _set;
             wait_for_result result;
-            ::immer::flex_vector<in_memory_log_entry, nil::dbms::immer::dbms_memory_policy> _commitedLogEntries;
+            ::immer::flex_vector<inmemory_log_entry, nil::dbms::immer::dbms_memory_policy> _commitedLogEntries;
         };
 
         struct alignas(128) guarded_leader_data {
             ~guarded_leader_data() = default;
-            guarded_leader_data(log_leader &self, in_memory_log inMemoryLog);
+            guarded_leader_data(log_leader &self, inmemory_log inMemoryLog);
 
             guarded_leader_data() = delete;
             guarded_leader_data(guarded_leader_data const &) = delete;
@@ -266,7 +266,7 @@ namespace nil::dbms::replication::replicated_log {
                 -> resolved_promise_set;
 
             [[nodiscard]] auto getInternalLogIterator(log_index firstIdx) const
-                -> std::unique_ptr<typed_log_iterator<in_memory_log_entry>>;
+                -> std::unique_ptr<typed_log_iterator<inmemory_log_entry>>;
 
             [[nodiscard]] auto getCommittedLogIterator(log_index firstIndex) const -> std::unique_ptr<LogRangeIterator>;
 
@@ -279,12 +279,12 @@ namespace nil::dbms::replication::replicated_log {
             [[nodiscard]] auto calculateCommitLag() const noexcept -> std::chrono::duration<double, std::milli>;
 
             auto insertInternal(std::variant<log_meta_payload, log_payload>, bool waitForSync,
-                                std::optional<in_memory_log_entry::clock::time_point> insertTp) -> log_index;
+                                std::optional<inmemory_log_entry::clock::time_point> insertTp) -> log_index;
 
             [[nodiscard]] auto waitForResign() -> std::pair<futures::Future<futures::Unit>, deferred_action>;
 
             log_leader &_self;
-            in_memory_log _inMemoryLog;
+            inmemory_log _inMemoryLog;
             std::unordered_map<ParticipantId, std::shared_ptr<follower_info>> _follower {};
             WaitForQueue _waitForQueue {};
             wait_for_bag _waitForResignQueue;

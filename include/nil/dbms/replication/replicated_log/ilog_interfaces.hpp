@@ -38,7 +38,7 @@ namespace nil::dbms::replication::replicated_log {
     struct log_core;
     struct log_status;
     struct quick_log_status;
-    struct in_memory_log;
+    struct inmemory_log;
 
     struct wait_for_result {
         /// @brief contains the _current_ commit index. (Not the index waited for)
@@ -77,7 +77,7 @@ namespace nil::dbms::replication::replicated_log {
         [[nodiscard]] virtual auto getTerm() const noexcept -> std::optional<log_term>;
         [[nodiscard]] virtual auto getCommitIndex() const noexcept -> log_index = 0;
 
-        [[nodiscard]] virtual auto copyInMemoryLog() const -> in_memory_log = 0;
+        [[nodiscard]] virtual auto copyInMemoryLog() const -> inmemory_log = 0;
         [[nodiscard]] virtual auto release(log_index doneWithIdx) -> Result = 0;
     };
 

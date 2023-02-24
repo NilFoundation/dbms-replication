@@ -50,7 +50,7 @@ auto algorithms::to_string(conflict_reason r) noexcept -> std::string_view {
     FATAL_ERROR_ABORT();
 }
 
-auto algorithms::detectConflict(replicated_log::in_memory_log const &log, term_index_pair prevLog) noexcept
+auto algorithms::detectConflict(replicated_log::inmemory_log const &log, term_index_pair prevLog) noexcept
     -> std::optional<std::pair<conflict_reason, term_index_pair>> {
     /*
      * There are three situations to handle here:

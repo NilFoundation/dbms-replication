@@ -57,10 +57,10 @@ namespace nil::dbms::replication::replicated_state {
          * @param log ReplicatedLog to use.
          * @return
          */
-        auto createReplicatedState(std::string_view name, std::shared_ptr<replicated_log::replicated_log_t> log)
+        auto create_replicated_state(std::string_view name, std::shared_ptr<replicated_log::replicated_log_t> log)
             -> std::shared_ptr<replicated_state_base>;
 
-        auto createReplicatedState(std::string_view name,
+        auto create_replicated_state(std::string_view name,
                                    std::shared_ptr<replicated_log::replicated_log_t>
                                        log,
                                    logger_context const &) -> std::shared_ptr<replicated_state_base>;
@@ -68,7 +68,7 @@ namespace nil::dbms::replication::replicated_state {
         template<typename S>
         auto createReplicatedStateAs(std::string_view name, std::shared_ptr<replicated_log::replicated_log_t> log)
             -> std::shared_ptr<replicated_state_t<S>> {
-            return std::dynamic_pointer_cast<replicated_state_t<S>>(createReplicatedState(name, std::move(log)));
+            return std::dynamic_pointer_cast<replicated_state_t<S>>(create_replicated_state(name, std::move(log)));
         }
 
     private:

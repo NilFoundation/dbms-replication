@@ -31,7 +31,7 @@ namespace nil::dbms::replication::algorithms {
         virtual auto get_replicated_state_by_id(LogId) noexcept
             -> std::shared_ptr<replicated_state::replicated_state_base> = 0;
 
-        virtual auto createReplicatedState(LogId, std::string_view, velocypack::Slice)
+        virtual auto create_replicated_state(LogId, std::string_view, velocypack::Slice)
             -> ResultT<std::shared_ptr<replicated_state::replicated_state_base>> = 0;
 
         virtual auto dropReplicatedState(LogId) -> Result = 0;

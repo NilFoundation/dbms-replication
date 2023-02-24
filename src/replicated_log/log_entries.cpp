@@ -150,19 +150,19 @@ auto persisting_log_entry::meta() const noexcept -> const log_meta_payload * {
     return std::get_if<log_meta_payload>(&_payload);
 }
 
-in_memory_log_entry::in_memory_log_entry(persisting_log_entry entry, bool waitForSync) :
+inmemory_log_entry::inmemory_log_entry(persisting_log_entry entry, bool waitForSync) :
     _waitForSync(waitForSync), _logEntry(std::move(entry)) {
 }
 
-void in_memory_log_entry::setInsertTp(clock::time_point tp) noexcept {
+void inmemory_log_entry::setInsertTp(clock::time_point tp) noexcept {
     _insertTp = tp;
 }
 
-auto in_memory_log_entry::insert_tp() const noexcept -> clock::time_point {
+auto inmemory_log_entry::insert_tp() const noexcept -> clock::time_point {
     return _insertTp;
 }
 
-auto in_memory_log_entry::entry() const noexcept -> persisting_log_entry const & {
+auto inmemory_log_entry::entry() const noexcept -> persisting_log_entry const & {
     // Note that while get() isn't marked as noexcept, it actually is.
     return _logEntry.get();
 }
