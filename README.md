@@ -242,7 +242,7 @@ prototype_log_entry value_to_insert{prototype_log_entry::insert_operation {std::
 
 entry_serializer<prototype_log_entry> serializer;
 streams::serializer_tag_t<prototype::prototype_log_entry> tag;
-velocypack::Builder builder;
+serialization::Builder builder;
 serializer.operator()(tag, value_to_insert, builder);
 
 log_payload payload = log_payload::create_from_slice(builder.slice());
@@ -324,7 +324,7 @@ prototype_log_entry value_to_insert{prototype_log_entry::insert_operation {std::
 
 entry_serializer<prototype_log_entry> serializer;
 streams::serializer_tag_t<prototype::prototype_log_entry> tag;
-velocypack::Builder builder;
+serialization::Builder builder;
 
 // Serializing the write-ahead log entry to a binary format
 serializer.operator()(tag, value_to_insert, builder);
